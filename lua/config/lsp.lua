@@ -12,10 +12,12 @@ if enabled(group, "lsp") then
         local configs = exist and type(custom_config) == "table" and custom_config.lsp_configs or {}
         local config = type(configs) == "table" and configs[server_name] or {}
         local capabilities = require("blink.cmp").get_lsp_capabilities(config.capabilities)
-        require("lspconfig")[server_name].setup({
+        -- require("lspconfig")[server_name].setup({
+        vim.lsp.config(server_name, {
           capabilities = capabilities,
           config = config,
         })
+        vim.lsp.enable(server_name)
       end,
     },
   })
