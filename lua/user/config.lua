@@ -184,7 +184,6 @@ M.treesitter_ensure_installed = {
   "jsdoc",
   "json",
   "json5",
-  "jsonc",
   "latex",
   "lua",
   "luap",
@@ -203,7 +202,6 @@ M.treesitter_ensure_installed = {
   "scss",
   "toml",
   "tsx",
-  "verilog",
   "wgsl",
   "yaml",
 }
