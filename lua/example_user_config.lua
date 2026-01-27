@@ -1,7 +1,7 @@
--- custom_config.lua is the lua file where custom configuration for LususNvim happens
+-- config.lua is the lua file where user configuration for LususNvim happens
 -- This file is a template that covers the most important aspects of configuring LususNvim
--- create a directory named custom under the lua folder and copy this file to
--- lua/custom/custom_config.lua
+-- create a directory named user under the lua folder and copy this file to
+-- lua/user/config.lua
 
 local utils = require("config.utils")
 
@@ -21,7 +21,7 @@ M.options = {
     expandtab = false,
     foldenable = true,
     foldmethod = "expr",
-    foldexpr = "nvim_treesitter#foldexpr()",
+    foldexpr = "v:lua.vim.treesitter.foldexpr()",
     foldlevel = 99,
     foldlevelstart = 99,
     foldopen = "jump,block,hor,mark,percent,quickfix,search,tag,undo",
@@ -269,7 +269,7 @@ M.plugins = {
   --   ft = "rust",
   --   cond = M.enable_plugins.rust_tools,
   --   config = function()
-  --     require("custom.plugin-configs.rust-tools")
+  --     require("user.plugin-configs.rust-tools")
   --   end,
   -- },
   -- {
@@ -277,7 +277,7 @@ M.plugins = {
   --   lazy = false,
   --   cond = M.enable_plugins.tokyonight,
   --   config = function()
-  --     require("custom.plugin-configs.tokyonight")
+  --     require("user.plugin-configs.tokyonight")
   --   end,
   -- },
   -- {
@@ -285,7 +285,7 @@ M.plugins = {
   --   lazy = false,
   --   cond = M.enable_plugins.catppuccin,
   --   config = function()
-  --     require("custom.plugin-configs.catppuccin")
+  --     require("user.plugin-configs.catppuccin")
   --   end,
   -- },
   -- {
@@ -293,7 +293,7 @@ M.plugins = {
   --   lazy = false,
   --   cond = M.enable_plugins.nightfox,
   --   config = function()
-  --     require("custom.plugin-configs.nightfox")
+  --     require("user.plugin-configs.nightfox")
   --   end,
   -- },
   -- {
@@ -301,7 +301,7 @@ M.plugins = {
   --   lazy = false,
   --   cond = M.enable_plugins.monokai_pro,
   --   config = function()
-  --     require("custom.plugin-configs.monokai-pro")
+  --     require("user.plugin-configs.monokai-pro")
   --   end,
   -- },
 }
@@ -376,7 +376,7 @@ M.custom_conf = function()
   -- utils.colors("monokai-pro-machine")
   -- utils.colors("monokai-pro-octagon")
 
-  -- require("custom.usercommands") -- exapmple of using a file for custom usercommands
+  -- require("user.usercommands") -- example of using a file for custom usercommands
 end
 
 return M

@@ -1,5 +1,10 @@
 local M = {}
 
+-- OS detection helpers
+M.is_mac = vim.fn.has("macunix") == 1
+M.is_linux = vim.fn.has("unix") == 1 and not M.is_mac
+M.is_windows = vim.fn.has("win32") == 1
+
 -- sets main options from options (table)
 M.vim_opts = function(options)
   if options ~= nil then
@@ -88,9 +93,11 @@ M.update_all = function()
   require("lazy").sync({ wait = true })
   M.notify_info("Updating Mason packages...")
   M.update_mason()
-  -- make sure treesitter is loaded so it can update parsers
-  require("nvim-treesitter")
-  vim.cmd("TSUpdate")
+  -- Update treesitter parsers
+  local ok, ts = pcall(require, "nvim-treesitter")
+  if ok and ts.update then
+    ts.update()
+  end
   M.notify_info("LususNvim updated!")
 end
 

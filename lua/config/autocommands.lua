@@ -1,8 +1,8 @@
 local augroup = vim.api.nvim_create_augroup
 local autocmd = vim.api.nvim_create_autocmd
-local exist, custom_config = pcall(require, "custom.custom_config")
-local group = exist and type(custom_config) == "table" and custom_config.autocommands or {}
-local plugin = exist and type(custom_config) == "table" and custom_config.enable_plugins or {}
+local exist, user_config = pcall(require, "user.config")
+local group = exist and type(user_config) == "table" and user_config.autocommands or {}
+local plugin = exist and type(user_config) == "table" and user_config.enable_plugins or {}
 local enabled = require("config.utils").enabled
 
 -- disables code folding for the start screen

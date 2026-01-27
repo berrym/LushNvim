@@ -14,9 +14,9 @@ for _, source in ipairs({
   end
 end
 
-local exist, custom_config = pcall(require, "custom.custom_config")
-if exist and type(custom_config) == "table" and custom_config.custom_conf then
-  custom_config.custom_conf()
+local exist, user_config = pcall(require, "user.config")
+if exist and type(user_config) == "table" and user_config.custom_conf then
+  user_config.custom_conf()
 end
 
 -- supress deprecated messages

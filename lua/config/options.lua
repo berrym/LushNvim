@@ -14,7 +14,7 @@ vim_opts({
     expandtab = false,
     foldenable = true,
     foldmethod = "expr",
-    foldexpr = "nvim_treesitter#foldexpr()",
+    foldexpr = "v:lua.vim.treesitter.foldexpr()",
     foldlevel = 99,
     foldlevelstart = 99,
     foldopen = "jump,block,hor,mark,percent,quickfix,search,tag,undo",
@@ -48,6 +48,6 @@ vim_opts({
   },
 })
 
-local exist, custom_config = pcall(require, "custom.custom_config")
-local opts = exist and type(custom_config) == "table" and custom_config.options or {}
+local exist, user_config = pcall(require, "user.config")
+local opts = exist and type(user_config) == "table" and user_config.options or {}
 vim_opts(opts)
