@@ -292,4 +292,29 @@ end
 -- ["<C-f>"] = cmp_action.luasnip_jump_forward(),
 -- ["<C-b>"] = cmp_action.luasnip_jump_backward(),
 
+-- claudecode.nvim
+if enabled(group, "claudecode") then
+  vim.keymap.set("n", "<leader>c", "", { desc = "Claude Code" })
+  vim.keymap.set("n", "<leader>cc", "<CMD>ClaudeCode<CR>", { desc = "Toggle Claude Code terminal" })
+  vim.keymap.set("n", "<leader>cf", "<CMD>ClaudeCodeFocus<CR>", { desc = "Focus Claude Code" })
+  vim.keymap.set("n", "<leader>cr", "<CMD>ClaudeCode --resume<CR>", { desc = "Resume conversation" })
+  vim.keymap.set("n", "<leader>cR", "<CMD>ClaudeCode --continue<CR>", { desc = "Continue conversation" })
+  vim.keymap.set("v", "<leader>cs", "<CMD>ClaudeCodeSend<CR>", { desc = "Send selection to Claude" })
+  vim.keymap.set({ "n", "v" }, "<leader>ca", "<CMD>ClaudeCodeAdd<CR>", { desc = "Add to Claude context" })
+  vim.keymap.set("n", "<leader>cb", "<CMD>ClaudeCodeAdd %<CR>", { desc = "Add buffer to context" })
+  vim.keymap.set("n", "<leader>ct", "<CMD>ClaudeCodeTreeAdd<CR>", { desc = "Add file from tree" })
+  vim.keymap.set("n", "<leader>cd", "", { desc = "+Diff" })
+  vim.keymap.set("n", "<leader>cda", "<CMD>ClaudeCodeDiffAccept<CR>", { desc = "Accept diff" })
+  vim.keymap.set("n", "<leader>cdd", "<CMD>ClaudeCodeDiffDeny<CR>", { desc = "Deny diff" })
+end
+
+-- snacks.nvim utilities
+if enabled(group, "snacks") then
+  vim.keymap.set("n", "<leader>.", function() require("snacks").scratch() end, { desc = "Toggle scratch buffer" })
+  vim.keymap.set("n", "<leader>S", function() require("snacks").scratch.select() end, { desc = "Select scratch buffer" })
+  vim.keymap.set("n", "<leader>gB", function() require("snacks").gitbrowse() end, { desc = "Git browse" })
+  vim.keymap.set("n", "<leader>bd", function() require("snacks").bufdelete() end, { desc = "Delete buffer" })
+  vim.keymap.set("n", "<leader>rn", function() require("snacks").rename.rename_file() end, { desc = "Rename file" })
+end
+
 return M

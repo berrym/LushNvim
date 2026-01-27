@@ -305,6 +305,32 @@ local plugins = {
     cond = enabled(group, "zen"),
     cmd = "ZenMode",
   },
+  -- claudecode.nvim: Claude Code CLI integration
+  {
+    "coder/claudecode.nvim",
+    cond = enabled(group, "claudecode"),
+    event = "VeryLazy",
+  },
+  -- snacks.nvim: modern utility plugins collection (additional features, not replacements)
+  {
+    "folke/snacks.nvim",
+    cond = enabled(group, "snacks"),
+    priority = 1000,
+    lazy = false,
+    opts = {
+      bigfile = { enabled = true },
+      quickfile = { enabled = true },
+      input = { enabled = true },
+      words = { enabled = true },
+      bufdelete = { enabled = true },
+      debug = { enabled = true },
+      git = { enabled = true },
+      gitbrowse = { enabled = true },
+      rename = { enabled = true },
+      toggle = { enabled = true },
+      win = { enabled = true },
+    },
+  },
   custom_plugins,
 }
 
