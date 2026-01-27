@@ -1,8 +1,8 @@
 local notify_info = require("config.utils").notify_info
 local enabled = require("config.utils").enabled
-local exist, custom_config = pcall(require, "custom.custom_config")
-local group = exist and type(custom_config) == "table" and custom_config.enable_plugins or {}
-local custom_plugins = exist and type(custom_config) == "table" and custom_config.plugins or {}
+local exist, user_config = pcall(require, "user.config")
+local group = exist and type(user_config) == "table" and user_config.enable_plugins or {}
+local custom_plugins = exist and type(user_config) == "table" and user_config.plugins or {}
 
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not (vim.uv or vim.loop).fs_stat(lazypath) then
@@ -207,11 +207,13 @@ local plugins = {
   },
   {
     "nvim-treesitter/nvim-treesitter",
+    branch = "main",
     cond = enabled(group, "treesitter"),
+    lazy = false,
     build = ":TSUpdate",
     event = { "BufReadPost", "BufNewFile" },
     dependencies = {
-      { "nvim-treesitter/nvim-treesitter-textobjects" },
+      { "nvim-treesitter/nvim-treesitter-textobjects", branch = "main" },
       {
         "nvim-treesitter/nvim-treesitter-context",
         cond = enabled(group, "context"),
@@ -282,19 +284,9 @@ local plugins = {
     cmd = { "Twilight", "TwilightEnable", "TwilightDisable" },
   },
   {
-    "folke/which-key.nvim", -- opted for a mostly basic config straight from github readme
+    "folke/which-key.nvim",
     cond = enabled(group, "whichkey"),
     event = "VeryLazy",
-    opts = {},
-    keys = {
-      {
-        "<leader>?",
-        function()
-          require("which-key").show({ global = false })
-        end,
-        desc = "Buffer Local Keymaps (which-key)",
-      },
-    },
   },
   {
     "nvim-lualine/lualine.nvim",

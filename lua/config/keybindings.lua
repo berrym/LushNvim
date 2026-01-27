@@ -1,320 +1,375 @@
-local exist, custom_config = pcall(require, "custom.custom_config")
-local group = exist and type(custom_config) == "table" and custom_config.enable_plugins or {}
+-- ╔═══════════════════════════════════════════════════════════════════════════╗
+-- ║                         LususNvim Keybindings                             ║
+-- ╠═══════════════════════════════════════════════════════════════════════════╣
+-- ║  Leader Groups:                                                           ║
+-- ║    <leader>a  AI/Claude     󰚩    <leader>b  Buffer      󰈔                ║
+-- ║    <leader>c  Code/LSP           <leader>d  Debug                        ║
+-- ║    <leader>f  Find               <leader>g  Git                          ║
+-- ║    <leader>n  Explorer     󰙅    <leader>q  Quit        󰗼                ║
+-- ║    <leader>s  Session      󱂬    <leader>t  Tab         󰓩                ║
+-- ║    <leader>u  UI                 <leader>w  Window                       ║
+-- ║    <leader>x  Diagnostics  󰒡                                              ║
+-- ╚═══════════════════════════════════════════════════════════════════════════╝
+
+local exist, user_config = pcall(require, "user.config")
+local group = exist and type(user_config) == "table" and user_config.enable_plugins or {}
 local enabled = require("config.utils").enabled
-vim.g.mapleader = " " -- the leader key is the spacebar
+
+-- ══════════════════════════════════════════════════════════════════════════════
+-- [1] Leader Key Setup
+-- ══════════════════════════════════════════════════════════════════════════════
+vim.g.mapleader = " "
 
 local M = {}
 
--- Alpha
-if enabled(group, "alpha") then
-  vim.keymap.set("n", "<leader>;", "<CMD>Alpha<CR>", { desc = "Dashboard" })
-end
+-- ══════════════════════════════════════════════════════════════════════════════
+-- [2] Helper Functions
+-- ══════════════════════════════════════════════════════════════════════════════
+local map = vim.keymap.set
 
--- Bufferline
+-- ══════════════════════════════════════════════════════════════════════════════
+-- [3] Direct Window Navigation (Ctrl+h/j/k/l)
+-- ══════════════════════════════════════════════════════════════════════════════
+map("n", "<C-h>", "<C-w>h", { desc = "Focus left window" })
+map("n", "<C-j>", "<C-w>j", { desc = "Focus down window" })
+map("n", "<C-k>", "<C-w>k", { desc = "Focus up window" })
+map("n", "<C-l>", "<C-w>l", { desc = "Focus right window" })
+
+-- ══════════════════════════════════════════════════════════════════════════════
+-- [4] Bracket Navigation
+-- ══════════════════════════════════════════════════════════════════════════════
+
+-- Buffer navigation (bracket style)
 if enabled(group, "bufferline") then
-  vim.keymap.set("n", "<leader>b", "", { desc = "Buffers" })
-  vim.keymap.set("n", "<leader>bj", "<CMD>BufferLinePick<CR>", { desc = "Jump" })
-  vim.keymap.set("n", "<leader>bf", "<CMD>Telescope buffers previewer=false<CR>", { desc = "Find" })
-  vim.keymap.set("n", "<leader>bb", "<CMD>BufferLineCyclePrev<CR>", { desc = "Previous" })
-  vim.keymap.set("n", "<leader>bn", "<CMD>BufferLineCycleNext<CR>", { desc = "Next" })
-  vim.keymap.set(
-    "n",
-    "<leader>bW",
-    "<CMD>noautocmd w<CR>",
-    { desc = "Save without formatting (noautocmd)" }
-  )
-  vim.keymap.set(
-    "n",
-    "<leader>be",
-    "<CMD>BufferLinePickClose<CR>",
-    { desc = "Pick buffer to close" }
-  )
-  vim.keymap.set(
-    "n",
-    "<leader>bh",
-    "<CMD>BufferLineCloseLeft<CR>",
-    { desc = "Close all to the left" }
-  )
-  vim.keymap.set(
-    "n",
-    "<leader>bl",
-    "<CMD>BufferLineCloseRight<CR>",
-    { desc = "Close all to the right" }
-  )
+  map("n", "[b", "<CMD>BufferLineCyclePrev<CR>", { desc = "Previous buffer" })
+  map("n", "]b", "<CMD>BufferLineCycleNext<CR>", { desc = "Next buffer" })
 end
 
--- Image Pasting
-if enabled(group, "img_paste") then
-  vim.keymap.set("n", "<leader>p", "<CMD>PasteImage<CR>", { desc = "Paste clipboard image" })
+-- Tab navigation (bracket style)
+map("n", "[t", "<CMD>tabprevious<CR>", { desc = "Previous tab" })
+map("n", "]t", "<CMD>tabnext<CR>", { desc = "Next tab" })
+
+-- Diagnostic navigation (bracket style)
+map("n", "[d", vim.diagnostic.goto_prev, { desc = "Previous diagnostic" })
+map("n", "]d", vim.diagnostic.goto_next, { desc = "Next diagnostic" })
+
+-- ══════════════════════════════════════════════════════════════════════════════
+-- [5] Leader Groups (Alphabetical)
+-- ══════════════════════════════════════════════════════════════════════════════
+
+-- ──────────────────────────────────────────────────────────────────────────────
+-- <leader>a: AI/Claude Code 󰚩
+-- ──────────────────────────────────────────────────────────────────────────────
+if enabled(group, "claudecode") then
+  map("n", "<leader>aa", "<CMD>ClaudeCode<CR>", { desc = "Toggle Claude Code terminal" })
+  map("n", "<leader>af", "<CMD>ClaudeCodeFocus<CR>", { desc = "Focus Claude Code" })
+  map("n", "<leader>ar", "<CMD>ClaudeCode --resume<CR>", { desc = "Resume conversation" })
+  map("n", "<leader>aR", "<CMD>ClaudeCode --continue<CR>", { desc = "Continue conversation" })
+  map("v", "<leader>as", "<CMD>ClaudeCodeSend<CR>", { desc = "Send selection to Claude" })
+  map({ "n", "v" }, "<leader>ac", "<CMD>ClaudeCodeAdd<CR>", { desc = "Add to Claude context" })
+  map("n", "<leader>ab", "<CMD>ClaudeCodeAdd %<CR>", { desc = "Add buffer to context" })
+  map("n", "<leader>at", "<CMD>ClaudeCodeTreeAdd<CR>", { desc = "Add file from tree" })
+  -- +Diff subgroup
+  map("n", "<leader>ada", "<CMD>ClaudeCodeDiffAccept<CR>", { desc = "Accept diff" })
+  map("n", "<leader>add", "<CMD>ClaudeCodeDiffDeny<CR>", { desc = "Deny diff" })
 end
 
--- DAP
+-- ──────────────────────────────────────────────────────────────────────────────
+-- <leader>b: Buffer 󰈔
+-- ──────────────────────────────────────────────────────────────────────────────
+if enabled(group, "bufferline") then
+  map("n", "<leader>bb", "<CMD>Telescope buffers previewer=false<CR>", { desc = "Buffer picker" })
+  map("n", "<leader>bf", "<CMD>Telescope buffers<CR>", { desc = "Find buffer" })
+  map("n", "<leader>bj", "<CMD>BufferLinePick<CR>", { desc = "Jump to buffer" })
+  map("n", "<leader>bn", "<CMD>BufferLineCycleNext<CR>", { desc = "Next buffer" })
+  map("n", "<leader>bp", "<CMD>BufferLineCyclePrev<CR>", { desc = "Previous buffer" })
+  map("n", "<leader>bo", "<CMD>BufferLineCloseOthers<CR>", { desc = "Close other buffers" })
+  map("n", "<leader>bh", "<CMD>BufferLineCloseLeft<CR>", { desc = "Close buffers to left" })
+  map("n", "<leader>bl", "<CMD>BufferLineCloseRight<CR>", { desc = "Close buffers to right" })
+  map("n", "<leader>bW", "<CMD>noautocmd w<CR>", { desc = "Save without formatting" })
+end
+
+if enabled(group, "snacks") then
+  map("n", "<leader>bd", function() require("snacks").bufdelete() end, { desc = "Delete buffer" })
+end
+
+-- ──────────────────────────────────────────────────────────────────────────────
+-- <leader>c: Code/LSP  (LSP bindings added in lsp.lua LspAttach)
+-- ──────────────────────────────────────────────────────────────────────────────
+if enabled(group, "trouble") then
+  map("n", "<leader>cs", "<cmd>Trouble symbols toggle focus=false<cr>", { desc = "Symbols (Trouble)" })
+  map("n", "<leader>cl", "<cmd>Trouble lsp toggle focus=false win.position=right<cr>", { desc = "LSP info (Trouble)" })
+end
+
+-- ──────────────────────────────────────────────────────────────────────────────
+-- <leader>d: Debug
+-- ──────────────────────────────────────────────────────────────────────────────
 if enabled(group, "dap") then
   _G.dap = require("dap")
-  vim.keymap.set("n", "<leader>d", "", { desc = "+Debugging" })
-  vim.keymap.set("n", "<leader>dc", "<CMD>lua dap.continue()<CR>", { desc = "continue" })
-  vim.keymap.set("n", "<leader>dn", "<CMD>lua dap.step_over()<CR>", { desc = "step over" })
-  vim.keymap.set("n", "<leader>di", "<CMD>lua dap.step_into()<CR>", { desc = "step into" })
-  vim.keymap.set("n", "<leader>do", "<CMD>lua dap.step_out()<CR>", { desc = "step out" })
-  vim.keymap.set(
-    "n",
-    "<leader>db",
-    "<CMD>lua dap.toggle_breakpoint()<CR>",
-    { desc = "toggle breakpoint" }
-  )
-  vim.keymap.set(
-    "n",
-    "<leader>dq",
-    "<CMD>lua dap.disconnect({ terminateDebuggee = true })<CR>",
-    { desc = "quit" }
-  )
+  map("n", "<leader>dc", "<CMD>lua dap.continue()<CR>", { desc = "Continue" })
+  map("n", "<leader>dn", "<CMD>lua dap.step_over()<CR>", { desc = "Step over" })
+  map("n", "<leader>di", "<CMD>lua dap.step_into()<CR>", { desc = "Step into" })
+  map("n", "<leader>do", "<CMD>lua dap.step_out()<CR>", { desc = "Step out" })
+  map("n", "<leader>db", "<CMD>lua dap.toggle_breakpoint()<CR>", { desc = "Toggle breakpoint" })
+  map("n", "<leader>dq", "<CMD>lua dap.disconnect({ terminateDebuggee = true })<CR>", { desc = "Quit debugger" })
+  map("n", "<leader>du", "<CMD>lua require('dapui').toggle()<CR>", { desc = "Toggle DAP UI" })
 end
 
--- Trouble
-if enabled(group, "trouble") then
-  vim.keymap.set("n", "<leader>x", "", { desc = "Diagnostics" })
-  vim.keymap.set(
-    "n",
-    "<leader>xx",
-    "<cmd>Trouble diagnostics toggle<cr>",
-    { desc = "Diagnostics (Trouble)" }
-  )
-  vim.keymap.set(
-    "n",
-    "<leader>xX",
-    "<cmd>Trouble diagnostics toggle filter.buf=0<cr>",
-    { desc = "Buffer Diagnostics (Trouble)" }
-  )
-  vim.keymap.set(
-    "n",
-    "<leader>cs",
-    "<cmd>Trouble symbols toggle focus=false<cr>",
-    { desc = "Symbols (Trouble)" }
-  )
-  vim.keymap.set(
-    "n",
-    "<leader>cl",
-    "<cmd>Trouble lsp toggle focus=false win.position=right<cr>",
-    { desc = "LSP Definitions / references / ... (Trouble)" }
-  )
-  vim.keymap.set(
-    "n",
-    "<leader>xL",
-    "<cmd>Trouble loclist toggle<cr>",
-    { desc = "Location List (Trouble)" }
-  )
-  vim.keymap.set(
-    "n",
-    "<leader>xQ",
-    "<cmd>Trouble qflist toggle<cr>",
-    { desc = "Quickfix List (Trouble)" }
-  )
-end
-
--- UFO
-if enabled(group, "ufo") then
-  vim.keymap.set(
-    "n",
-    "zR",
-    "<CMD>lua require('ufo').openAllFolds()<CR>",
-    { desc = "Open all folds" }
-  )
-  vim.keymap.set(
-    "n",
-    "zM",
-    "<CMD>lua require('ufo').closeAllFolds()<CR>",
-    { desc = "Close all folds" }
-  )
-end
-
--- ZenMode
-if enabled(group, "zen") then
-  vim.keymap.set("n", "<leader>zm", "<CMD>ZenMode<CR>", { desc = "Toggle zen mode" })
-end
-
--- NeoTree
-if enabled(group, "neotree") then
-  vim.keymap.set("n", "<leader>n", "", { desc = "Explorer" })
-  vim.keymap.set(
-    "n",
-    "<leader>nn",
-    "<CMD>Neotree toggle current<CR>",
-    { desc = "Toggle fullscreen" }
-  )
-  vim.keymap.set("n", "<leader>nl", "<CMD>Neotree toggle left<CR>", { desc = "Toggle left" })
-  vim.keymap.set("n", "<leader>nr", "<CMD>Neotree toggle right<CR>", { desc = "Toggle right" })
-  vim.keymap.set("n", "<leader>nf", "<CMD>Neotree reveal float<CR>", { desc = "Toggle float" })
-end
-
--- Aerial
-if enabled(group, "aerial") then
-  vim.keymap.set("n", "<leader>a", "", { desc = "Code map" })
-  vim.keymap.set("n", "<leader>at", "<CMD>AerialToggle<CR>", { desc = "Toggle aerial" })
-end
-
--- Searching and Highlighting
-vim.keymap.set("n", "m", "<CMD>noh<CR>", { desc = "Search no highlight" })
-
--- Movement
--- in insert mode, type <c-d> and your cursor will move past the next separator
--- such as quotes, parens, brackets, etc.
-vim.keymap.set("i", "<C-d>", "<left><c-o>/[\"';)>}\\]]<cr><c-o><CMD>noh<cr><right>")
-vim.keymap.set("i", "<C-b>", "<C-o>0")
-vim.keymap.set("i", "<C-a>", "<C-o>A")
-
--- Window switching from terminal
-vim.keymap.set("t", "<C-w>h", "<C-\\><C-n><C-w>h")
-vim.keymap.set("t", "<C-w>j", "<C-\\><C-n><C-w>j")
-vim.keymap.set("t", "<C-w>k", "<C-\\><C-n><C-w>k")
-vim.keymap.set("t", "<C-w>l", "<C-\\><C-n><C-w>l")
-
--- Command mode
-vim.keymap.set("c", "<C-p>", "<Up>")
-vim.keymap.set("c", "<C-n>", "<Down>")
-
--- Telescope
+-- ──────────────────────────────────────────────────────────────────────────────
+-- <leader>f: Find
+-- ──────────────────────────────────────────────────────────────────────────────
 if enabled(group, "telescope") then
-  vim.keymap.set("n", "<leader>f", "", { desc = "Find" })
-  vim.keymap.set(
-    "n",
-    "<leader>ff",
-    "<CMD>Telescope git_files hidden=true<CR>",
-    { desc = "Telescope Find Files" }
-  )
-  vim.keymap.set("n", "<leader>fg", "<CMD>Telescope live_grep<CR>")
-  vim.keymap.set("n", "<leader>fb", "<CMD>Telescope buffers<CR>")
-  vim.keymap.set("n", "<leader>fh", "<CMD>Telescope help_tags<CR>")
-  vim.keymap.set("n", "<leader>fa", "<CMD>Telescope aerial<CR>")
-  vim.keymap.set("n", "<leader>fp", "<CMD>Telescope projects<CR>")
+  map("n", "<leader>ff", "<CMD>Telescope git_files hidden=true<CR>", { desc = "Find files (git)" })
+  map("n", "<leader>fF", "<CMD>Telescope find_files hidden=true<CR>", { desc = "Find all files" })
+  map("n", "<leader>fg", "<CMD>Telescope live_grep<CR>", { desc = "Live grep" })
+  map("n", "<leader>fw", "<CMD>Telescope grep_string<CR>", { desc = "Grep word under cursor" })
+  map("n", "<leader>fb", "<CMD>Telescope buffers<CR>", { desc = "Buffers" })
+  map("n", "<leader>fh", "<CMD>Telescope help_tags<CR>", { desc = "Help tags" })
+  map("n", "<leader>fr", "<CMD>Telescope oldfiles<CR>", { desc = "Recent files" })
+  map("n", "<leader>fp", "<CMD>Telescope projects<CR>", { desc = "Projects" })
+  map("n", "<leader>fa", "<CMD>Telescope aerial<CR>", { desc = "Aerial symbols" })
+  map("n", "<leader>fm", "<CMD>Telescope marks<CR>", { desc = "Marks" })
+  map("n", "<leader>fR", "<CMD>Telescope resume<CR>", { desc = "Resume search" })
 end
 
--- Move lines and blocks
-vim.keymap.set("x", "<A-j>", ":m '>+1<CR>gv=gv")
-vim.keymap.set("x", "<A-k>", ":m '<-2<CR>gv=gv")
-
--- Notify
-if enabled(group, "notify") then
-  vim.keymap.set("n", "<ESC>", "<CMD>lua require('notify').dismiss()<CR>")
-  vim.keymap.set("i", "<ESC>", "<CMD>lua require('notify').dismiss()<CR><ESC>")
+-- ──────────────────────────────────────────────────────────────────────────────
+-- <leader>g: Git  (hunks via gitsigns on_attach)
+-- ──────────────────────────────────────────────────────────────────────────────
+if enabled(group, "toggleterm") then
+  map("n", "<leader>gg", "<CMD>lua terminal.lazygit_toggle()<CR>", { desc = "Lazygit" })
 end
 
--- SessionManager
+if enabled(group, "snacks") then
+  map("n", "<leader>gB", function() require("snacks").gitbrowse() end, { desc = "Git browse" })
+end
+
+-- ──────────────────────────────────────────────────────────────────────────────
+-- <leader>n: Explorer 󰙅
+-- ──────────────────────────────────────────────────────────────────────────────
+if enabled(group, "neotree") then
+  map("n", "<leader>nn", "<CMD>Neotree toggle current<CR>", { desc = "Toggle fullscreen" })
+  map("n", "<leader>nl", "<CMD>Neotree toggle left<CR>", { desc = "Toggle left" })
+  map("n", "<leader>nr", "<CMD>Neotree toggle right<CR>", { desc = "Toggle right" })
+  map("n", "<leader>nf", "<CMD>Neotree reveal float<CR>", { desc = "Toggle float" })
+end
+
+-- ──────────────────────────────────────────────────────────────────────────────
+-- <leader>q: Quit 󰗼
+-- ──────────────────────────────────────────────────────────────────────────────
+map("n", "<leader>qq", "<CMD>qa<CR>", { desc = "Quit all" })
+map("n", "<leader>qQ", "<CMD>qa!<CR>", { desc = "Quit without saving" })
+map("n", "<leader>qw", "<CMD>close<CR>", { desc = "Close window" })
+map("n", "<leader>qb", "<CMD>bdelete<CR>", { desc = "Close buffer" })
+map("n", "<leader>qa", "<CMD>wqa<CR>", { desc = "Save all and quit" })
+
+-- ──────────────────────────────────────────────────────────────────────────────
+-- <leader>s: Session 󱂬
+-- ──────────────────────────────────────────────────────────────────────────────
 if enabled(group, "session_manager") then
-  vim.keymap.set("n", "<leader>s", "", { desc = "Sessions" })
-  vim.keymap.set("n", "<leader>ss", "<CMD>SessionManager save_current_session<CR>")
-  vim.keymap.set("n", "<leader>so", "<CMD>SessionManager load_session<CR>")
+  map("n", "<leader>ss", "<CMD>SessionManager save_current_session<CR>", { desc = "Save session" })
+  map("n", "<leader>sl", "<CMD>SessionManager load_session<CR>", { desc = "Load session" })
+  map("n", "<leader>so", "<CMD>SessionManager load_last_session<CR>", { desc = "Open last session" })
 end
 
--- ToggleTerm
+-- ──────────────────────────────────────────────────────────────────────────────
+-- <leader>t: Tab 󰓩
+-- ──────────────────────────────────────────────────────────────────────────────
+map("n", "<leader>tn", "<CMD>tabnew<CR>", { desc = "New tab" })
+map("n", "<leader>tc", "<CMD>tabclose<CR>", { desc = "Close tab" })
+map("n", "<leader>to", "<CMD>tabonly<CR>", { desc = "Close other tabs" })
+map("n", "<leader>tp", "<CMD>tabprevious<CR>", { desc = "Previous tab" })
+
+-- Terminal tools
 if enabled(group, "toggleterm") then
   local git_root = "cd $(git rev-parse --show-toplevel 2>/dev/null) && clear"
-  vim.keymap.set("t", "<C-\\>", "<C-\\><C-n>")
-  -- opens terminal as a new tab at the git root
-  -- as a regular window
-  vim.keymap.set(
-    "n",
-    "<C-\\>",
-    "<CMD>ToggleTerm go_back=0 cmd='" .. git_root .. "'<CR>",
-    { desc = "new terminal" }
-  )
-  vim.keymap.set(
-    "n",
-    "<leader>tk",
-    "<CMD>TermExec go_back=0 direction=float cmd='" .. git_root .. "&& tokei'<CR>",
-    { desc = "tokei" }
-  )
-  vim.keymap.set(
-    "n",
-    "<leader>gg",
-    "<CMD>lua terminal.lazygit_toggle()<CR>",
-    { desc = "open lazygit" }
-  )
-  vim.keymap.set("n", "<leader>gd", "<CMD>lua terminal.gdu_toggle()<CR>", { desc = "open gdu" })
-  vim.keymap.set("n", "<leader>bt", "<CMD>lua terminal.btop_toggle()<CR>", { desc = "open btop" })
+  map("n", "<leader>tk", "<CMD>TermExec go_back=0 direction=float cmd='" .. git_root .. "&& tokei'<CR>", { desc = "Tokei" })
+end
+
+-- ──────────────────────────────────────────────────────────────────────────────
+-- <leader>u: UI Toggles
+-- ──────────────────────────────────────────────────────────────────────────────
+map("n", "<leader>us", "<CMD>setlocal spell!<CR>", { desc = "Toggle spelling" })
+map("n", "<leader>uw", "<CMD>setlocal wrap!<CR>", { desc = "Toggle wrap" })
+map("n", "<leader>uL", "<CMD>setlocal relativenumber!<CR>", { desc = "Toggle relative number" })
+map("n", "<leader>ul", "<CMD>setlocal number!<CR>", { desc = "Toggle line numbers" })
+
+map("n", "<leader>ud", function()
+  vim.diagnostic.enable(not vim.diagnostic.is_enabled())
+end, { desc = "Toggle diagnostics" })
+
+map("n", "<leader>uh", function()
+  vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled())
+end, { desc = "Toggle inlay hints" })
+
+if enabled(group, "zen") then
+  map("n", "<leader>uz", "<CMD>ZenMode<CR>", { desc = "Toggle zen mode" })
+end
+
+if enabled(group, "twilight") then
+  map("n", "<leader>ut", "<CMD>Twilight<CR>", { desc = "Toggle twilight" })
+end
+
+if enabled(group, "notify") then
+  map("n", "<leader>un", function() require("notify").dismiss() end, { desc = "Dismiss notifications" })
+end
+
+-- ──────────────────────────────────────────────────────────────────────────────
+-- <leader>w: Window
+-- ──────────────────────────────────────────────────────────────────────────────
+map("n", "<leader>wv", "<CMD>vsplit<CR>", { desc = "Vertical split" })
+map("n", "<leader>ws", "<CMD>split<CR>", { desc = "Horizontal split" })
+map("n", "<leader>wc", "<CMD>close<CR>", { desc = "Close window" })
+map("n", "<leader>wo", "<CMD>only<CR>", { desc = "Close other windows" })
+map("n", "<leader>ww", "<C-w>p", { desc = "Switch to last window" })
+map("n", "<leader>w=", "<C-w>=", { desc = "Equalize window sizes" })
+map("n", "<leader>w+", "<CMD>resize +5<CR>", { desc = "Increase height" })
+map("n", "<leader>w-", "<CMD>resize -5<CR>", { desc = "Decrease height" })
+map("n", "<leader>w>", "<CMD>vertical resize +5<CR>", { desc = "Increase width" })
+map("n", "<leader>w<", "<CMD>vertical resize -5<CR>", { desc = "Decrease width" })
+
+-- ──────────────────────────────────────────────────────────────────────────────
+-- <leader>x: Diagnostics 󰒡
+-- ──────────────────────────────────────────────────────────────────────────────
+if enabled(group, "trouble") then
+  map("n", "<leader>xx", "<cmd>Trouble diagnostics toggle<cr>", { desc = "All diagnostics" })
+  map("n", "<leader>xX", "<cmd>Trouble diagnostics toggle filter.buf=0<cr>", { desc = "Buffer diagnostics" })
+  map("n", "<leader>xL", "<cmd>Trouble loclist toggle<cr>", { desc = "Location list" })
+  map("n", "<leader>xQ", "<cmd>Trouble qflist toggle<cr>", { desc = "Quickfix list" })
+end
+
+-- ══════════════════════════════════════════════════════════════════════════════
+-- [6] Text Operations
+-- ══════════════════════════════════════════════════════════════════════════════
+
+-- Move lines/blocks with Alt+j/k
+map("x", "<A-j>", ":m '>+1<CR>gv=gv", { desc = "Move selection down" })
+map("x", "<A-k>", ":m '<-2<CR>gv=gv", { desc = "Move selection up" })
+
+-- ══════════════════════════════════════════════════════════════════════════════
+-- [7] Misc Mappings
+-- ══════════════════════════════════════════════════════════════════════════════
+
+-- Alpha dashboard
+if enabled(group, "alpha") then
+  map("n", "<leader>;", "<CMD>Alpha<CR>", { desc = "Dashboard" })
 end
 
 -- Hop
 if enabled(group, "hop") then
-  vim.keymap.set("n", "<leader>j", "<CMD>HopWord<CR>")
+  map("n", "<leader>j", "<CMD>HopWord<CR>", { desc = "Hop to word" })
 end
 
--- Gitsigns
+-- Snacks scratch buffers
+if enabled(group, "snacks") then
+  map("n", "<leader>.", function() require("snacks").scratch() end, { desc = "Toggle scratch buffer" })
+  map("n", "<leader>S", function() require("snacks").scratch.select() end, { desc = "Select scratch buffer" })
+  map("n", "<leader>rn", function() require("snacks").rename.rename_file() end, { desc = "Rename file" })
+end
 
--- making this a function here because all it does is create keybinds for gitsigns but
--- it needs to be attached to an on_attach function.
+-- Clear search highlight
+map("n", "m", "<CMD>noh<CR>", { desc = "Clear search highlight" })
+
+-- Which-key help
+if enabled(group, "whichkey") then
+  map("n", "<leader>?", function() require("which-key").show({ global = false }) end, { desc = "Show keymaps" })
+end
+
+-- Notify dismiss (ESC in normal/insert)
+if enabled(group, "notify") then
+  map("n", "<ESC>", "<CMD>lua require('notify').dismiss()<CR>", { desc = "Dismiss notifications" })
+  map("i", "<ESC>", "<CMD>lua require('notify').dismiss()<CR><ESC>")
+end
+
+-- UFO folds
+if enabled(group, "ufo") then
+  map("n", "zR", "<CMD>lua require('ufo').openAllFolds()<CR>", { desc = "Open all folds" })
+  map("n", "zM", "<CMD>lua require('ufo').closeAllFolds()<CR>", { desc = "Close all folds" })
+end
+
+-- Image paste
+if enabled(group, "img_paste") then
+  map("n", "<leader>p", "<CMD>PasteImage<CR>", { desc = "Paste clipboard image" })
+end
+
+-- Aerial (code map) - now under Find group via telescope
+if enabled(group, "aerial") then
+  map("n", "<leader>uA", "<CMD>AerialToggle<CR>", { desc = "Toggle aerial" })
+end
+
+-- ══════════════════════════════════════════════════════════════════════════════
+-- [8] Terminal Mappings
+-- ══════════════════════════════════════════════════════════════════════════════
+
+-- Window switching from terminal
+map("t", "<C-w>h", "<C-\\><C-n><C-w>h")
+map("t", "<C-w>j", "<C-\\><C-n><C-w>j")
+map("t", "<C-w>k", "<C-\\><C-n><C-w>k")
+map("t", "<C-w>l", "<C-\\><C-n><C-w>l")
+
+-- Direct Ctrl+hjkl navigation from terminal
+map("t", "<C-h>", "<C-\\><C-n><C-w>h")
+map("t", "<C-j>", "<C-\\><C-n><C-w>j")
+map("t", "<C-k>", "<C-\\><C-n><C-w>k")
+map("t", "<C-l>", "<C-\\><C-n><C-w>l")
+
+-- ToggleTerm
+if enabled(group, "toggleterm") then
+  local git_root = "cd $(git rev-parse --show-toplevel 2>/dev/null) && clear"
+  map("t", "<C-\\>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
+  map("n", "<C-\\>", "<CMD>ToggleTerm go_back=0 cmd='" .. git_root .. "'<CR>", { desc = "Toggle terminal" })
+end
+
+-- ══════════════════════════════════════════════════════════════════════════════
+-- [9] Gitsigns on_attach Callback
+-- ══════════════════════════════════════════════════════════════════════════════
+
 if enabled(group, "gitsigns") then
   M.gitsigns = function()
     local gs = package.loaded.gitsigns
-    -- travel between hunks, backwards and forwards
-    vim.keymap.set("n", "]c", function()
-      if vim.wo.diff then
-        return "]c"
-      end
-      vim.schedule(function()
-        gs.next_hunk()
-      end)
-      return "<Ignore>"
-    end, { expr = true, desc = "go to previous git hunk" })
-    vim.keymap.set("n", "[c", function()
-      if vim.wo.diff then
-        return "[c"
-      end
-      vim.schedule(function()
-        gs.prev_hunk()
-      end)
-      return "<Ignore>"
-    end, { expr = true, desc = "go to next git hunk" })
 
-    vim.keymap.set("n", "<leader>hs", gs.stage_hunk, { desc = "stage hunk" })
-    vim.keymap.set("n", "<leader>hr", gs.reset_hunk, { desc = "reset hunk" })
-    vim.keymap.set("n", "<leader>hS", gs.stage_buffer, { desc = "stage buffer" })
-    vim.keymap.set("n", "<leader>hu", gs.undo_stage_hunk, { desc = "undo stage hunk" })
-    vim.keymap.set("n", "<leader>hR", gs.reset_buffer, { desc = "reset buffer" })
-    vim.keymap.set("n", "<leader>hp", gs.preview_hunk, { desc = "preview hunk" })
-    vim.keymap.set("n", "<leader>hb", function()
-      gs.blame_line({ full = true })
-    end, { desc = "complete blame line history" })
-    vim.keymap.set("n", "<leader>lb", gs.toggle_current_line_blame, { desc = "toggle blame line" })
-    -- diff at current working directory
-    vim.keymap.set("n", "<leader>hd", gs.diffthis, { desc = "diff at cwd" })
-    -- diff at root of git repository
-    vim.keymap.set("n", "<leader>hD", function()
-      gs.diffthis("~")
-    end, { desc = "diff at root of git repo" })
-    vim.keymap.set("n", "<leader>td", gs.toggle_deleted, { desc = "toggle deleted line" })
+    -- Hunk navigation (bracket style) [c ]c
+    map("n", "]c", function()
+      if vim.wo.diff then return "]c" end
+      vim.schedule(function() gs.next_hunk() end)
+      return "<Ignore>"
+    end, { expr = true, desc = "Next git hunk" })
+
+    map("n", "[c", function()
+      if vim.wo.diff then return "[c" end
+      vim.schedule(function() gs.prev_hunk() end)
+      return "<Ignore>"
+    end, { expr = true, desc = "Previous git hunk" })
+
+    -- Git operations under <leader>g
+    map("n", "<leader>gs", gs.stage_hunk, { desc = "Stage hunk" })
+    map("n", "<leader>gr", gs.reset_hunk, { desc = "Reset hunk" })
+    map("n", "<leader>gS", gs.stage_buffer, { desc = "Stage buffer" })
+    map("n", "<leader>gu", gs.undo_stage_hunk, { desc = "Undo stage hunk" })
+    map("n", "<leader>gR", gs.reset_buffer, { desc = "Reset buffer" })
+    map("n", "<leader>gp", gs.preview_hunk, { desc = "Preview hunk" })
+    map("n", "<leader>gb", function() gs.blame_line({ full = true }) end, { desc = "Blame line (full)" })
+    map("n", "<leader>gd", gs.diffthis, { desc = "Diff this" })
+    map("n", "<leader>gD", function() gs.diffthis("~") end, { desc = "Diff root" })
+    map("n", "<leader>gT", gs.toggle_deleted, { desc = "Toggle deleted" })
+    map("n", "<leader>gL", gs.toggle_current_line_blame, { desc = "Toggle line blame" })
+
+    -- Visual mode stage/reset
+    map("v", "<leader>gs", function() gs.stage_hunk({ vim.fn.line("."), vim.fn.line("v") }) end, { desc = "Stage hunk" })
+    map("v", "<leader>gr", function() gs.reset_hunk({ vim.fn.line("."), vim.fn.line("v") }) end, { desc = "Reset hunk" })
   end
 end
 
--- cmp (these are defined in cmp's configuration file)
--- ["<C-j>"] = cmp.mapping.scroll_docs(-4),
--- ["<C-k"] = cmp.mapping.scroll_docs(4),
--- ["<C-c>"] = cmp.mapping.abort(),
--- ["<C-f>"] = cmp_action.luasnip_jump_forward(),
--- ["<C-b>"] = cmp_action.luasnip_jump_backward(),
+-- ══════════════════════════════════════════════════════════════════════════════
+-- [10] Insert/Command Mode Mappings
+-- ══════════════════════════════════════════════════════════════════════════════
 
--- claudecode.nvim
-if enabled(group, "claudecode") then
-  vim.keymap.set("n", "<leader>c", "", { desc = "Claude Code" })
-  vim.keymap.set("n", "<leader>cc", "<CMD>ClaudeCode<CR>", { desc = "Toggle Claude Code terminal" })
-  vim.keymap.set("n", "<leader>cf", "<CMD>ClaudeCodeFocus<CR>", { desc = "Focus Claude Code" })
-  vim.keymap.set("n", "<leader>cr", "<CMD>ClaudeCode --resume<CR>", { desc = "Resume conversation" })
-  vim.keymap.set("n", "<leader>cR", "<CMD>ClaudeCode --continue<CR>", { desc = "Continue conversation" })
-  vim.keymap.set("v", "<leader>cs", "<CMD>ClaudeCodeSend<CR>", { desc = "Send selection to Claude" })
-  vim.keymap.set({ "n", "v" }, "<leader>ca", "<CMD>ClaudeCodeAdd<CR>", { desc = "Add to Claude context" })
-  vim.keymap.set("n", "<leader>cb", "<CMD>ClaudeCodeAdd %<CR>", { desc = "Add buffer to context" })
-  vim.keymap.set("n", "<leader>ct", "<CMD>ClaudeCodeTreeAdd<CR>", { desc = "Add file from tree" })
-  vim.keymap.set("n", "<leader>cd", "", { desc = "+Diff" })
-  vim.keymap.set("n", "<leader>cda", "<CMD>ClaudeCodeDiffAccept<CR>", { desc = "Accept diff" })
-  vim.keymap.set("n", "<leader>cdd", "<CMD>ClaudeCodeDiffDeny<CR>", { desc = "Deny diff" })
-end
+-- Insert mode navigation
+map("i", "<C-d>", "<left><c-o>/[\"';)>}\\]]<cr><c-o><CMD>noh<cr><right>")
+map("i", "<C-b>", "<C-o>0")
+map("i", "<C-a>", "<C-o>A")
 
--- snacks.nvim utilities
-if enabled(group, "snacks") then
-  vim.keymap.set("n", "<leader>.", function() require("snacks").scratch() end, { desc = "Toggle scratch buffer" })
-  vim.keymap.set("n", "<leader>S", function() require("snacks").scratch.select() end, { desc = "Select scratch buffer" })
-  vim.keymap.set("n", "<leader>gB", function() require("snacks").gitbrowse() end, { desc = "Git browse" })
-  vim.keymap.set("n", "<leader>bd", function() require("snacks").bufdelete() end, { desc = "Delete buffer" })
-  vim.keymap.set("n", "<leader>rn", function() require("snacks").rename.rename_file() end, { desc = "Rename file" })
-end
+-- Command mode
+map("c", "<C-p>", "<Up>")
+map("c", "<C-n>", "<Down>")
 
 return M

@@ -1,5 +1,5 @@
-local exist, custom_config = pcall(require, "custom.custom_config")
-local group = exist and type(custom_config) == "table" and custom_config.enable_plugins or {}
+local exist, user_config = pcall(require, "user.config")
+local group = exist and type(user_config) == "table" and user_config.enable_plugins or {}
 local enabled = require("config.utils").enabled
 
 if enabled(group, "lsp") then
@@ -8,8 +8,8 @@ if enabled(group, "lsp") then
     handlers = {
       function(server_name)
         -- local capabilities = require("cmp_nvim_lsp").default_capabilities()
-        exist, custom_config = pcall(require, "custom.custom_config")
-        local configs = exist and type(custom_config) == "table" and custom_config.lsp_configs or {}
+        exist, user_config = pcall(require, "user.config")
+        local configs = exist and type(user_config) == "table" and user_config.lsp_configs or {}
         local config = type(configs) == "table" and configs[server_name] or {}
         local capabilities = require("blink.cmp").get_lsp_capabilities(config.capabilities)
         -- require("lspconfig")[server_name].setup({
@@ -26,6 +26,7 @@ if enabled(group, "lsp") then
     desc = "LSP actions",
     callback = function(event)
       local opts = { buffer = event.buf }
+      -- g-prefix bindings (traditional)
       vim.keymap.set("n", "K", "<cmd>lua vim.lsp.buf.hover()<cr>", opts)
       vim.keymap.set("n", "gd", "<cmd>lua vim.lsp.buf.definition()<cr>", opts)
       vim.keymap.set("n", "gD", "<cmd>lua vim.lsp.buf.declaration()<cr>", opts)
@@ -34,9 +35,19 @@ if enabled(group, "lsp") then
       vim.keymap.set("n", "gr", "<cmd>lua vim.lsp.buf.references()<cr>", opts)
       vim.keymap.set("n", "gR", "<cmd>Telescope lsp_references<cr>", opts)
       vim.keymap.set("n", "gs", "<cmd>lua vim.lsp.buf.signature_help()<cr>", opts)
+      -- Function key bindings
       vim.keymap.set("n", "<F2>", "<cmd>lua vim.lsp.buf.rename()<cr>", opts)
       vim.keymap.set({ "n", "x" }, "<F3>", "<cmd>lua vim.lsp.buf.format({async = true})<cr>", opts)
       vim.keymap.set("n", "<F4>", "<cmd>lua vim.lsp.buf.code_action()<cr>", opts)
+      -- Leader Code bindings (<leader>c)
+      vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, { buffer = event.buf, desc = "Code action" })
+      vim.keymap.set("n", "<leader>cr", vim.lsp.buf.rename, { buffer = event.buf, desc = "Rename symbol" })
+      vim.keymap.set("n", "<leader>cd", vim.lsp.buf.definition, { buffer = event.buf, desc = "Go to definition" })
+      vim.keymap.set("n", "<leader>cD", vim.lsp.buf.declaration, { buffer = event.buf, desc = "Go to declaration" })
+      vim.keymap.set("n", "<leader>ci", vim.lsp.buf.implementation, { buffer = event.buf, desc = "Go to implementation" })
+      vim.keymap.set("n", "<leader>cR", "<cmd>Telescope lsp_references<cr>", { buffer = event.buf, desc = "Find references" })
+      vim.keymap.set({ "n", "x" }, "<leader>cf", function() vim.lsp.buf.format({ async = true }) end, { buffer = event.buf, desc = "Format" })
+      vim.keymap.set("n", "<leader>ch", vim.lsp.buf.signature_help, { buffer = event.buf, desc = "Signature help" })
     end,
   })
 
@@ -52,8 +63,8 @@ if enabled(group, "lsp") then
   })
 end
 
-exist, custom_config = pcall(require, "custom.custom_config")
-group = exist and type(custom_config) == "table" and custom_config.enable_plugins or {}
+exist, user_config = pcall(require, "user.config")
+group = exist and type(user_config) == "table" and user_config.enable_plugins or {}
 
 if enabled(group, "cmp") then
   require("blink.cmp").setup({
