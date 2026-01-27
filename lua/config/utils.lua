@@ -86,7 +86,7 @@ M.update_mason = function()
   end
 end
 
--- updates everything in LususNvim
+-- updates everything in LushNvim
 M.update_all = function()
   M.notify_info("Pulling latest changes...")
   vim.fn.jobstart({ "git", "pull", "--rebase" })
@@ -98,7 +98,7 @@ M.update_all = function()
   if ok and ts.update then
     ts.update()
   end
-  M.notify_info("LususNvim updated!")
+  M.notify_info("LushNvim updated!")
 end
 
 -- get attached lsp servers

@@ -1,5 +1,5 @@
--- config.lua is the lua file where user configuration for LususNvim happens
--- This file is a template that covers the most important aspects of configuring LususNvim
+-- config.lua is the lua file where user configuration for LushNvim happens
+-- This file is a template that covers the most important aspects of configuring LushNvim
 -- create a directory named user under the lua folder and copy this file to
 -- lua/user/config.lua
 

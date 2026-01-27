@@ -1,12 +1,8 @@
-# LususNvim
-
-![Alt text](screenshots/lususnvim_alpha.png)
-![Alt text](screenshots/lususnvim_editing.png)
-![Alt text](screenshots/lususnvim_lazygit.png)
+# LushNvim
 
 ## About
 
-- LususNvim is a small yet fully featured IDE-like configuration for neovim.
+- LushNvim is a small yet fully featured IDE-like configuration for Neovim.
 - It's ready to use out of the box but meant to be almost completely and very simply modified.
 - No compromise on full IDE-like functionality is made while remaining small and simple.
 - Its goal is to be a typical great personal configuration that also fulfills the role of a distro.
@@ -35,31 +31,35 @@ v0.1.0
 
 ## Installation
 
-Direct installation on a UNIX-like operating system.
+Direct installation on a UNIX-like operating system:
 
-    $ git clone https://github.com/berrym/LususNvim.git ~/.config/nvim
+    $ git clone https://github.com/berrym/LushNvim.git ~/.config/nvim
 
 
-Recommended installation to a non-default physical location.
+Recommended installation to a non-default physical location:
 
-    $ git clone https://github.com/berrym/LususNvim.git # into directory of user's choice
-    $ ln -s ~/path/to/LususNvim ~/.config/nvim
+    $ git clone https://github.com/berrym/LushNvim.git ~/path/to/LushNvim
+    $ ln -s ~/path/to/LushNvim ~/.config/nvim
 
 
 ## Configuration
 
-Create a user config directory under the lua directory in the LususNvim root directory:
+LushNvim supports user customization through a dedicated config file. To set up your personal configuration:
 
-    $ mkdir -pv ~/path/to/LususNvim/lua/user
-    $ cd ~/path/to/LususNvim/lua/user
-    $ cp ../example_user_config.lua config.lua
+    $ cp ~/.config/nvim/lua/example_user_config.lua ~/.config/nvim/lua/user/config.lua
 
-Edit `config.lua` following the commentary to customize your setup.
+Edit `lua/user/config.lua` following the commentary to customize your setup. The user config allows you to:
+
+- Override default Neovim options
+- Configure enabled/disabled plugins
+- Set up custom LSP servers and Mason packages
+- Define custom keybindings
+- Add additional plugins
 
 
 ## Post installation
 
-- After installation run nvim and let LususNvim download and configure its requirements.
+- After installation run nvim and let LushNvim download and configure its requirements.
 - This process can take several minutes so be patient.
 - After the initial setup has finished close nvim then reopen it.
   - You may have luck after installation just opening the start menu, `<leader>;`
@@ -67,7 +67,7 @@ Edit `config.lua` following the commentary to customize your setup.
 
 ## Keybindings
 
-LususNvim uses a mnemonic keybinding system with which-key integration. Press `<leader>` (space) and wait to see available groups with icons.
+LushNvim uses a mnemonic keybinding system with which-key integration. Press `<leader>` (space) and wait to see available groups with icons.
 
 ### Leader Groups
 
@@ -115,7 +115,7 @@ LususNvim uses a mnemonic keybinding system with which-key integration. Press `<
 
 - On startup you'll be greeted with a menu with many options.
   - What options appear depends on what features you have enabled or if you're in a git repo etc.
-- LususNvim uses which-key so it will help guide the user on which keystrokes perform commands.
+- LushNvim uses which-key so it will help guide the user on which keystrokes perform commands.
   - `?` will bring up buffer local keybindings if in a window other than the main, e.g. neotree.
 - `<C-\>` (Ctrl+backslash) will toggle a retractable terminal.
 - Most commands are executed in Normal mode, and start by pressing the `<leader>` which is space.
@@ -143,7 +143,7 @@ LususNvim uses a mnemonic keybinding system with which-key integration. Press `<
   - `:Mason` opens the main ui for Mason
   - `:MasonInstall` will install extensions, `:MasonUninstall` does the opposite.
   - Configuration of Mason and LSP is easily managed by editing the user config.
-- The command `:LususUpdate` can be used to update most of what gets installed.
+- The command `:LushUpdate` can be used to update most of what gets installed.
 - `:AstroTransparencyOn` and `:AstroTransparencyOff` can be used to toggle transparency.
 - If you like controlling your session using the startup screen it can be opened with `<leader>;`
 - There is much more but this represents a basic starting point.
@@ -151,7 +151,7 @@ LususNvim uses a mnemonic keybinding system with which-key integration. Press `<
 
 ## Copyright
 
-Michael Berry 2025
+Michael Berry 2026
 
 
 ## License

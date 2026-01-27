@@ -1,7 +1,7 @@
 local create_user_command = vim.api.nvim_create_user_command
 local colors = require("config.utils").colors
 
-create_user_command("LususUpdate", function()
+create_user_command("LushUpdate", function()
   require("config.utils").update_all()
 end, { desc = "Updates plugins, mason packages, treesitter parsers" })
 

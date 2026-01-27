@@ -6,7 +6,7 @@ if enabled(group, "lualine") then
   -- Eviline config for lualine
   -- Author: shadmansaleh
   -- Credit: glepnir
-  -- Modified for LususNvim
+  -- Modified for LushNvim
 
   local lualine = require("lualine")
   local get_attached_clients = require("config.utils").get_attached_clients

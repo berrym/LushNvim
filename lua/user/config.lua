@@ -1,4 +1,4 @@
--- config.lua file where user configuration for LususNvim happens
+-- config.lua file where user configuration for LushNvim happens
 
 local utils = require("config.utils")
 
