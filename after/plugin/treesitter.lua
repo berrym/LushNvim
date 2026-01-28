@@ -1,9 +1,9 @@
-local exist, user_config = pcall(require, "user.config")
-local group = exist and type(user_config) == "table" and user_config.enable_plugins or {}
-local parsers = exist and type(user_config) == "table" and user_config.treesitter_ensure_installed or {}
-local enabled = require("config.utils").enabled
+local utils = require("config.utils")
+local group = utils.get_plugin_group()
+local user_config = utils.get_user_config()
+local parsers = user_config.treesitter_ensure_installed or {}
 
-if enabled(group, "treesitter") then
+if utils.enabled(group, "treesitter") then
   -- New main branch setup
   require("nvim-treesitter").setup({})
 
@@ -66,7 +66,7 @@ if enabled(group, "treesitter") then
 end
 
 -- nvim-ts-autotag (independent setup)
-if enabled(group, "autotag") then
+if utils.enabled(group, "autotag") then
   require("nvim-ts-autotag").setup({
     opts = {
       enable_close = true,
@@ -77,7 +77,7 @@ if enabled(group, "autotag") then
 end
 
 -- rainbow-delimiters (independent setup)
-if enabled(group, "rainbow") then
+if utils.enabled(group, "rainbow") then
   local rainbow = require("rainbow-delimiters")
   vim.g.rainbow_delimiters = {
     strategy = {

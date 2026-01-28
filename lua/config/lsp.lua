@@ -7,16 +7,15 @@ if enabled(group, "lsp") then
   require("mason-lspconfig").setup({
     handlers = {
       function(server_name)
-        -- local capabilities = require("cmp_nvim_lsp").default_capabilities()
         exist, user_config = pcall(require, "user.config")
         local configs = exist and type(user_config) == "table" and user_config.lsp_configs or {}
         local config = type(configs) == "table" and configs[server_name] or {}
         local capabilities = require("blink.cmp").get_lsp_capabilities(config.capabilities)
-        -- require("lspconfig")[server_name].setup({
-        vim.lsp.config(server_name, {
+        -- Merge user config with capabilities
+        local lsp_config = vim.tbl_deep_extend("force", config, {
           capabilities = capabilities,
-          config = config,
         })
+        vim.lsp.config(server_name, lsp_config)
         vim.lsp.enable(server_name)
       end,
     },
@@ -27,18 +26,18 @@ if enabled(group, "lsp") then
     callback = function(event)
       local opts = { buffer = event.buf }
       -- g-prefix bindings (traditional)
-      vim.keymap.set("n", "K", "<cmd>lua vim.lsp.buf.hover()<cr>", opts)
-      vim.keymap.set("n", "gd", "<cmd>lua vim.lsp.buf.definition()<cr>", opts)
-      vim.keymap.set("n", "gD", "<cmd>lua vim.lsp.buf.declaration()<cr>", opts)
-      vim.keymap.set("n", "gi", "<cmd>lua vim.lsp.buf.implementation()<cr>", opts)
-      vim.keymap.set("n", "go", "<cmd>lua vim.lsp.buf.type_definition()<cr>", opts)
-      vim.keymap.set("n", "gr", "<cmd>lua vim.lsp.buf.references()<cr>", opts)
+      vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
+      vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
+      vim.keymap.set("n", "gD", vim.lsp.buf.declaration, opts)
+      vim.keymap.set("n", "gi", vim.lsp.buf.implementation, opts)
+      vim.keymap.set("n", "go", vim.lsp.buf.type_definition, opts)
+      vim.keymap.set("n", "gr", vim.lsp.buf.references, opts)
       vim.keymap.set("n", "gR", "<cmd>Telescope lsp_references<cr>", opts)
-      vim.keymap.set("n", "gs", "<cmd>lua vim.lsp.buf.signature_help()<cr>", opts)
+      vim.keymap.set("n", "gs", vim.lsp.buf.signature_help, opts)
       -- Function key bindings
-      vim.keymap.set("n", "<F2>", "<cmd>lua vim.lsp.buf.rename()<cr>", opts)
-      vim.keymap.set({ "n", "x" }, "<F3>", "<cmd>lua vim.lsp.buf.format({async = true})<cr>", opts)
-      vim.keymap.set("n", "<F4>", "<cmd>lua vim.lsp.buf.code_action()<cr>", opts)
+      vim.keymap.set("n", "<F2>", vim.lsp.buf.rename, opts)
+      vim.keymap.set({ "n", "x" }, "<F3>", function() vim.lsp.buf.format({ async = true }) end, opts)
+      vim.keymap.set("n", "<F4>", vim.lsp.buf.code_action, opts)
       -- Leader Code bindings (<leader>c)
       vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, { buffer = event.buf, desc = "Code action" })
       vim.keymap.set("n", "<leader>cr", vim.lsp.buf.rename, { buffer = event.buf, desc = "Rename symbol" })
@@ -100,93 +99,3 @@ if enabled(group, "cmp") then
     },
   })
 end
-
--- local cmp = require("cmp")
--- local lspkind = require("lspkind")
---
--- require("luasnip.loaders.from_vscode").lazy_load()
---
--- cmp.setup({
---   sources = {
---     { name = "nvim_lsp" },
---     { name = "nvim_lua" },
---     { name = "luasnip" },
---     { name = "buffer" },
---     { name = "path" },
---   },
---   preselect = "item",
---   completion = {
---     completeopt = "menu,menuone,noinsert",
---   },
---   mapping = cmp.mapping.preset.insert({
---     ["<CR>"] = cmp.mapping.confirm({ select = false }),
---     -- Super tab
---     ["<Tab>"] = cmp.mapping(function(fallback)
---       local luasnip = require("luasnip")
---       local col = vim.fn.col(".") - 1
---       if cmp.visible() then
---         cmp.select_next_item({ behavior = "select" })
---       elseif luasnip.expand_or_locally_jumpable() then
---         luasnip.expand_or_jump()
---       elseif col == 0 or vim.fn.getline("."):sub(col, col):match("%s") then
---         fallback()
---       else
---         cmp.complete()
---       end
---     end, { "i", "s" }),
---     -- Super shift tab
---     ["<S-Tab>"] = cmp.mapping(function(fallback)
---       local luasnip = require("luasnip")
---       if cmp.visible() then
---         cmp.select_prev_item({ behavior = "select" })
---       elseif luasnip.locally_jumpable(-1) then
---         luasnip.jump(-1)
---       else
---         fallback()
---       end
---     end, { "i", "s" }),
---     -- Jump to the next snippet placeholder
---     ["<C-f>"] = cmp.mapping(function(fallback)
---       local luasnip = require("luasnip")
---       if luasnip.locally_jumpable(1) then
---         luasnip.jump(1)
---       else
---         fallback()
---       end
---     end, { "i", "s" }),
---     -- Jump to the previous snippet placeholder
---     ["<C-b>"] = cmp.mapping(function(fallback)
---       local luasnip = require("luasnip")
---       if luasnip.locally_jumpable(-1) then
---         luasnip.jump(-1)
---       else
---         fallback()
---       end
---     end, { "i", "s" }),
---   }),
---   window = {
---     completion = cmp.config.window.bordered(),
---     documentation = cmp.config.window.bordered(),
---   },
---   formatting = {
---     format = lspkind.cmp_format({
---       mode = "symbol", -- show only symbol annotations
---       maxwidth = {
---         -- prevent the popup from showing more than provided characters (e.g 50 will not show more than 50 characters)
---         -- can also be a function to dynamically calculate max width such as
---         -- menu = function() return math.floor(0.45 * vim.o.columns) end,
---         menu = 50, -- leading text (labelDetails)
---         abbr = 50, -- actual suggestion item
---       },
---       ellipsis_char = "...", -- when popup menu exceed maxwidth, the truncated part would show ellipsis_char instead (must define maxwidth first)
---       show_labelDetails = true, -- show labelDetails in menu. Disabled by default
---
---       -- The function below will be called before any actual modifications from lspkind
---       -- so that you can provide more controls on popup customization. (See [#30](https://github.com/onsails/lspkind-nvim/pull/30))
---       before = function(_, vim_item)
---         -- ...
---         return vim_item
---       end,
---     }),
---   },
--- })

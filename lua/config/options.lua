@@ -20,7 +20,6 @@ vim_opts({
     foldopen = "jump,block,hor,mark,percent,quickfix,search,tag,undo",
     guicursor = "n-v-c-sm:block,i-ci-ve:ver25,r-cr-o:hor20",
     mouse = "a",
-    hidden = true,
     hlsearch = true,
     ignorecase = true,
     incsearch = true,

@@ -61,17 +61,17 @@ local plugins = {
   },
   {
     "neovim/nvim-lspconfig",
-    cond = enabled("lsp"),
+    cond = enabled(group, "lsp"),
     event = "VimEnter",
   },
   {
     "williamboman/mason.nvim",
-    cond = enabled("lsp"),
+    cond = enabled(group, "lsp"),
     event = "VimEnter",
   },
   {
     "williamboman/mason-lspconfig.nvim",
-    cond = enabled("lsp"),
+    cond = enabled(group, "lsp"),
     event = "VimEnter",
   },
   {
@@ -132,21 +132,6 @@ local plugins = {
     cond = enabled(group, "autopairs"),
     event = "InsertEnter",
   },
-  -- {
-  --   "hrsh7th/nvim-cmp",
-  --   cond = enabled(group, "cmp"),
-  --   event = "InsertEnter",
-  --   dependencies = {
-  --     { "onsails/lspkind.nvim" },
-  --     { "hrsh7th/cmp-nvim-lsp" },
-  --     { "hrsh7th/cmp-buffer" },
-  --     { "hrsh7th/cmp-path" },
-  --     { "saadparwaiz1/cmp_luasnip" },
-  --     { "hrsh7th/cmp-nvim-lua" },
-  --     { "L3MON4D3/LuaSnip" },
-  --     { "rafamadriz/friendly-snippets" },
-  --   },
-  -- },
   {
     "saghen/blink.cmp",
     cond = enabled(group, "cmp"),

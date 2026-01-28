@@ -1,15 +1,14 @@
-local exist, user_config = pcall(require, "user.config")
-local group = exist and type(user_config) == "table" and user_config.enable_plugins or {}
-local enabled = require("config.utils").enabled
+local utils = require("config.utils")
+local group = utils.get_plugin_group()
 
-if enabled(group, "lualine") then
+if utils.enabled(group, "lualine") then
   -- Eviline config for lualine
   -- Author: shadmansaleh
   -- Credit: glepnir
   -- Modified for LushNvim
 
   local lualine = require("lualine")
-  local get_attached_clients = require("config.utils").get_attached_clients
+  local get_attached_clients = utils.get_attached_clients
 
   -- Color table for highlights
   -- stylua: ignore

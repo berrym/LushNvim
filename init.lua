@@ -18,6 +18,3 @@ local exist, user_config = pcall(require, "user.config")
 if exist and type(user_config) == "table" and user_config.custom_conf then
   user_config.custom_conf()
 end
-
--- supress deprecated messages
-vim.deprecate = function() end

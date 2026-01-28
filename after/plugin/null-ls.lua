@@ -1,11 +1,7 @@
 local null_ls = require("null-ls")
-
-local exist, user_config = pcall(require, "user.config")
-local sources = exist
-    and type(user_config) == "table"
-    and user_config.setup_sources
-    and user_config.setup_sources(null_ls.builtins)
-    or {}
+local utils = require("config.utils")
+local user_config = utils.get_user_config()
+local sources = user_config.setup_sources and user_config.setup_sources(null_ls.builtins) or {}
 
 null_ls.setup({
   on_attach = function(client, bufnr)

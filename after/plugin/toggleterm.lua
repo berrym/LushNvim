@@ -1,22 +1,12 @@
-local exist, user_config = pcall(require, "user.config")
-local group = exist and type(user_config) == "table" and user_config.enable_plugins or {}
-local enabled = require("config.utils").enabled
+local utils = require("config.utils")
+local group = utils.get_plugin_group()
 
-if enabled(group, "toggleterm") then
-  local opts = {
+if utils.enabled(group, "toggleterm") then
+  require("toggleterm").setup({
     open_mapping = [[<c-t>]],
     on_open = function(term)
-      vim.cmd("startinsert!")
-      vim.api.nvim_buf_set_keymap(
-        term.bufnr,
-        "n",
-        "q",
-        "<cmd>close<CR>",
-        { noremap = true, silent = true }
-      )
-    end,
-    on_close = function(_)
-      vim.cmd("startinsert!")
+      vim.cmd.startinsert()
+      vim.keymap.set("n", "q", "<cmd>close<CR>", { buffer = term.bufnr, noremap = true, silent = true })
     end,
     size = 25,
     direction = "horizontal",
@@ -24,15 +14,14 @@ if enabled(group, "toggleterm") then
       border = "curved",
       winblend = 6,
     },
+  })
+
+  -- Create floating terminal toggles (accessible via require("config.terminal"))
+  local Terminal = require("toggleterm.terminal").Terminal
+  local terminal = {
+    lazygit_toggle = utils.create_floating_terminal(Terminal, "lazygit"),
+    gdu_toggle = utils.create_floating_terminal(Terminal, "gdu"),
+    btop_toggle = utils.create_floating_terminal(Terminal, "btop"),
   }
-  require("toggleterm").setup(opts)
-
-  local create_floating_terminal = require("config.utils").create_floating_terminal
-  local terminal = require("toggleterm.terminal").Terminal
-
-  local M = {}
-  M.lazygit_toggle = create_floating_terminal(terminal, "lazygit")
-  M.gdu_toggle = create_floating_terminal(terminal, "gdu")
-  M.btop_toggle = create_floating_terminal(terminal, "btop")
-  _G.terminal = M
+  package.loaded["config.terminal"] = terminal
 end

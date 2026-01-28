@@ -26,7 +26,7 @@ end
 M.create_new_file = function()
   local filename = vim.fn.input("Enter the filename: ")
   if filename ~= "" then
-    vim.cmd("edit " .. filename)
+    vim.cmd.edit(filename)
   end
 end
 
@@ -49,17 +49,8 @@ M.create_floating_terminal = function(terminal, cmd)
         border = "rounded",
       },
       on_open = function(term)
-        vim.cmd("startinsert!")
-        vim.api.nvim_buf_set_keymap(
-          term.bufnr,
-          "n",
-          "q",
-          "<cmd>close<CR>",
-          { noremap = true, silent = true }
-        )
-      end,
-      on_close = function(_)
-        vim.cmd("startinsert!")
+        vim.cmd.startinsert()
+        vim.keymap.set("n", "q", "<cmd>close<CR>", { buffer = term.bufnr, noremap = true, silent = true })
       end,
     })
   end
@@ -120,10 +111,7 @@ M.get_attached_clients = function()
     end
   end
 
-  -- Generally, you should use either null-ls or nvim-lint + formatter.nvim, not both.
-
-  -- Add sources (from null-ls)
-  -- null-ls registers each source as a separate attached client, so we need to filter for unique names down below.
+  -- Add sources (from null-ls/none-ls)
   local null_ls_s, null_ls = pcall(require, "null-ls")
   if null_ls_s then
     local sources = null_ls.get_sources()
@@ -138,46 +126,13 @@ M.get_attached_clients = function()
     end
   end
 
-  -- -- Add linters (from nvim-lint)
-  -- local lint_s, lint = pcall(require, "lint")
-  -- if lint_s then
-  --   for ft_k, ft_v in pairs(lint.linters_by_ft) do
-  --     if type(ft_v) == "table" then
-  --       for _, linter in ipairs(ft_v) do
-  --         if buf_ft == ft_k then
-  --           table.insert(buf_client_names, linter)
-  --         end
-  --       end
-  --     elseif type(ft_v) == "string" then
-  --       if buf_ft == ft_k then
-  --         table.insert(buf_client_names, ft_v)
-  --       end
-  --     end
-  --   end
-  -- end
-  --
-  -- -- Add formatters (from formatter.nvim)
-  -- local formatter_s, _ = pcall(require, "formatter")
-  -- if formatter_s then
-  --   local formatter_util = require("formatter.util")
-  --   for _, formatter in ipairs(formatter_util.get_available_formatters_for_ft(buf_ft)) do
-  --     if formatter then
-  --       table.insert(buf_client_names, formatter)
-  --     end
-  --   end
-  -- end
-
-  -- This needs to be a string only table so we can use concat below
+  -- Deduplicate client names (O(n) using set)
+  local seen = {}
   local unique_client_names = {}
-  for _, client_name_target in ipairs(buf_client_names) do
-    local is_duplicate = false
-    for _, client_name_compare in ipairs(unique_client_names) do
-      if client_name_target == client_name_compare then
-        is_duplicate = true
-      end
-    end
-    if not is_duplicate then
-      table.insert(unique_client_names, client_name_target)
+  for _, name in ipairs(buf_client_names) do
+    if not seen[name] then
+      table.insert(unique_client_names, name)
+      seen[name] = true
     end
   end
 
@@ -201,6 +156,20 @@ end
 -- check if option to disable is active from specified group
 M.enabled = function(group, opt)
   return group == nil or group[opt] == nil or group[opt] == true
+end
+
+-- get user config value (reduces boilerplate in plugin files)
+M.get_user_config = function(key)
+  local exist, user_config = pcall(require, "user.config")
+  if exist and type(user_config) == "table" then
+    return key and user_config[key] or user_config
+  end
+  return {}
+end
+
+-- get enable_plugins group from user config
+M.get_plugin_group = function()
+  return M.get_user_config("enable_plugins")
 end
 
 M.notify_info = function(body, header)

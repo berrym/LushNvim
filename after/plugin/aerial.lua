@@ -1,8 +1,7 @@
-local exist, user_config = pcall(require, "user.config")
-local group = exist and type(user_config) == "table" and user_config.enable_plugins or {}
-local enabled = require("config.utils").enabled
+local utils = require("config.utils")
+local group = utils.get_plugin_group()
 
-if enabled(group, "aerial") then
+if utils.enabled(group, "aerial") then
   require("aerial").setup({
     highlight_on_hover = true,
     autojump = true,

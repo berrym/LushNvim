@@ -105,22 +105,22 @@ end
 -- <leader>d: Debug
 -- ──────────────────────────────────────────────────────────────────────────────
 if enabled(group, "dap") then
-  _G.dap = require("dap")
-  map("n", "<leader>dc", "<CMD>lua dap.continue()<CR>", { desc = "Continue" })
-  map("n", "<leader>dn", "<CMD>lua dap.step_over()<CR>", { desc = "Step over" })
-  map("n", "<leader>di", "<CMD>lua dap.step_into()<CR>", { desc = "Step into" })
-  map("n", "<leader>do", "<CMD>lua dap.step_out()<CR>", { desc = "Step out" })
-  map("n", "<leader>db", "<CMD>lua dap.toggle_breakpoint()<CR>", { desc = "Toggle breakpoint" })
-  map("n", "<leader>dq", "<CMD>lua dap.disconnect({ terminateDebuggee = true })<CR>", { desc = "Quit debugger" })
-  map("n", "<leader>du", "<CMD>lua require('dapui').toggle()<CR>", { desc = "Toggle DAP UI" })
+  local dap = require("dap")
+  map("n", "<leader>dc", dap.continue, { desc = "Continue" })
+  map("n", "<leader>dn", dap.step_over, { desc = "Step over" })
+  map("n", "<leader>di", dap.step_into, { desc = "Step into" })
+  map("n", "<leader>do", dap.step_out, { desc = "Step out" })
+  map("n", "<leader>db", dap.toggle_breakpoint, { desc = "Toggle breakpoint" })
+  map("n", "<leader>dq", function() dap.disconnect({ terminateDebuggee = true }) end, { desc = "Quit debugger" })
+  map("n", "<leader>du", function() require("dapui").toggle() end, { desc = "Toggle DAP UI" })
 end
 
 -- ──────────────────────────────────────────────────────────────────────────────
 -- <leader>f: Find
 -- ──────────────────────────────────────────────────────────────────────────────
 if enabled(group, "telescope") then
-  map("n", "<leader>ff", "<CMD>Telescope git_files hidden=true<CR>", { desc = "Find files (git)" })
-  map("n", "<leader>fF", "<CMD>Telescope find_files hidden=true<CR>", { desc = "Find all files" })
+  map("n", "<leader>ff", "<CMD>Telescope git_files<CR>", { desc = "Find files (git)" })
+  map("n", "<leader>fF", "<CMD>Telescope find_files<CR>", { desc = "Find all files" })
   map("n", "<leader>fg", "<CMD>Telescope live_grep<CR>", { desc = "Live grep" })
   map("n", "<leader>fw", "<CMD>Telescope grep_string<CR>", { desc = "Grep word under cursor" })
   map("n", "<leader>fb", "<CMD>Telescope buffers<CR>", { desc = "Buffers" })
@@ -136,7 +136,7 @@ end
 -- <leader>g: Git  (hunks via gitsigns on_attach)
 -- ──────────────────────────────────────────────────────────────────────────────
 if enabled(group, "toggleterm") then
-  map("n", "<leader>gg", "<CMD>lua terminal.lazygit_toggle()<CR>", { desc = "Lazygit" })
+  map("n", "<leader>gg", function() require("config.terminal").lazygit_toggle() end, { desc = "Lazygit" })
 end
 
 if enabled(group, "snacks") then
@@ -186,21 +186,8 @@ if enabled(group, "toggleterm") then
 end
 
 -- ──────────────────────────────────────────────────────────────────────────────
--- <leader>u: UI Toggles
+-- <leader>u: UI Toggles (core toggles provided by snacks.lua)
 -- ──────────────────────────────────────────────────────────────────────────────
-map("n", "<leader>us", "<CMD>setlocal spell!<CR>", { desc = "Toggle spelling" })
-map("n", "<leader>uw", "<CMD>setlocal wrap!<CR>", { desc = "Toggle wrap" })
-map("n", "<leader>uL", "<CMD>setlocal relativenumber!<CR>", { desc = "Toggle relative number" })
-map("n", "<leader>ul", "<CMD>setlocal number!<CR>", { desc = "Toggle line numbers" })
-
-map("n", "<leader>ud", function()
-  vim.diagnostic.enable(not vim.diagnostic.is_enabled())
-end, { desc = "Toggle diagnostics" })
-
-map("n", "<leader>uh", function()
-  vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled())
-end, { desc = "Toggle inlay hints" })
-
 if enabled(group, "zen") then
   map("n", "<leader>uz", "<CMD>ZenMode<CR>", { desc = "Toggle zen mode" })
 end
