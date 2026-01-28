@@ -27,4 +27,5 @@ if utils.enabled(group, "whichkey") then
     { "<leader>x", group = "Diagnostics", icon = "󰒡" },
     { "<leader>ad", group = "+Diff", icon = "" },
   })
+
 end

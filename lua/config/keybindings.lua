@@ -16,9 +16,10 @@ local group = exist and type(user_config) == "table" and user_config.enable_plug
 local enabled = require("config.utils").enabled
 
 -- ══════════════════════════════════════════════════════════════════════════════
--- [1] Leader Key Setup
+-- [1] Leader Key Setup (set in init.lua for early availability)
 -- ══════════════════════════════════════════════════════════════════════════════
-vim.g.mapleader = " "
+-- NOTE: mapleader is set in init.lua before lazy.nvim loads to ensure
+-- <leader> mappings in after/plugin files use the correct key
 
 local M = {}
 
