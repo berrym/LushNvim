@@ -73,6 +73,11 @@ if enabled(group, "claudecode") then
   -- +Diff subgroup
   map("n", "<leader>ada", "<CMD>ClaudeCodeDiffAccept<CR>", { desc = "Accept diff" })
   map("n", "<leader>add", "<CMD>ClaudeCodeDiffDeny<CR>", { desc = "Deny diff" })
+  -- +Position subgroup (like neo-tree)
+  map("n", "<leader>awb", function() _G.claudecode_set_position("bottom") end, { desc = "Window bottom" })
+  map("n", "<leader>awt", function() _G.claudecode_set_position("top") end, { desc = "Window top" })
+  map("n", "<leader>awl", function() _G.claudecode_set_position("left") end, { desc = "Window left" })
+  map("n", "<leader>awr", function() _G.claudecode_set_position("right") end, { desc = "Window right" })
 end
 
 -- ──────────────────────────────────────────────────────────────────────────────
@@ -93,6 +98,10 @@ end
 if enabled(group, "snacks") then
   map("n", "<leader>bd", function() require("snacks").bufdelete() end, { desc = "Delete buffer" })
 end
+
+-- Buffer reload (always available)
+map("n", "<leader>br", "<CMD>checktime<CR>", { desc = "Reload buffer" })
+map("n", "<leader>bR", "<CMD>e!<CR>", { desc = "Force reload (discard changes)" })
 
 -- ──────────────────────────────────────────────────────────────────────────────
 -- <leader>c: Code/LSP  (LSP bindings added in lsp.lua LspAttach)
@@ -200,6 +209,9 @@ end
 if enabled(group, "notify") then
   map("n", "<leader>un", function() require("notify").dismiss() end, { desc = "Dismiss notifications" })
 end
+
+-- Config reload
+map("n", "<leader>ur", "<CMD>LushReload<CR>", { desc = "Reload config (options/keymaps)" })
 
 -- ──────────────────────────────────────────────────────────────────────────────
 -- <leader>w: Window

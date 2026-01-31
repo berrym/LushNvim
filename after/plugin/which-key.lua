@@ -18,6 +18,8 @@ if utils.enabled(group, "whichkey") then
     { "<leader>d", group = "Debug", icon = "" },
     { "<leader>f", group = "Find", icon = "" },
     { "<leader>g", group = "Git", icon = "" },
+    { "<leader>G", group = "Go", icon = "" },
+    { "<leader>C", group = "C/C++", icon = "" },
     { "<leader>n", group = "Explorer", icon = "󰙅" },
     { "<leader>q", group = "Quit", icon = "󰗼" },
     { "<leader>s", group = "Session", icon = "󱂬" },
@@ -26,6 +28,9 @@ if utils.enabled(group, "whichkey") then
     { "<leader>w", group = "Window", icon = "" },
     { "<leader>x", group = "Diagnostics", icon = "󰒡" },
     { "<leader>ad", group = "+Diff", icon = "" },
+    { "<leader>aw", group = "+Window", icon = "" },
+    { "<leader>r", group = "Rust", icon = "🦀" },
+    { "<leader>p", group = "Python", icon = "🐍" },
   })
 
 end

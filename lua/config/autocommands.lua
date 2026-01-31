@@ -119,6 +119,43 @@ autocmd("FileType", {
   end,
 })
 
+-- Auto-reload buffers when files change externally
+if utils.enabled(group, "auto_reload") then
+  local auto_reload_group = augroup("auto_reload", { clear = true })
+  autocmd({ "FocusGained", "BufEnter", "CursorHold", "CursorHoldI" }, {
+    desc = "Check for external file changes",
+    group = auto_reload_group,
+    pattern = "*",
+    callback = function()
+      if vim.fn.getcmdwintype() == "" then
+        vim.cmd("checktime")
+      end
+    end,
+  })
+  autocmd("FileChangedShellPost", {
+    desc = "Notify when file changed externally",
+    group = auto_reload_group,
+    pattern = "*",
+    callback = function()
+      utils.notify_warn("File changed on disk. Buffer reloaded.", "File Changed")
+    end,
+  })
+end
+
+-- Claude Code auto-reload (more aggressive, for AI-edited files)
+if utils.enabled(group, "claude_code_reload") then
+  autocmd({ "FocusGained", "BufEnter" }, {
+    desc = "Reload buffers when Claude Code edits files",
+    group = augroup("claude_code_reload", { clear = true }),
+    pattern = "*",
+    callback = function()
+      if vim.fn.getcmdwintype() == "" and vim.bo.buftype == "" then
+        vim.cmd("checktime")
+      end
+    end,
+  })
+end
+
 -- Replace autochdir
 autocmd("BufWinEnter", {
   group = augroup("autochdir", { clear = true }),

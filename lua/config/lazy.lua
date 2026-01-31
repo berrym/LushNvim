@@ -285,6 +285,15 @@ local plugins = {
     cond = enabled(group, "claudecode"),
     event = "VeryLazy",
   },
+  -- rustaceanvim: Modern Rust development (successor to rust-tools.nvim)
+  -- NOTE: Use `rustup component add rust-analyzer` instead of Mason for rust-analyzer
+  {
+    "mrcjkb/rustaceanvim",
+    version = "^7",
+    cond = enabled(group, "rustaceanvim"),
+    lazy = false,
+    ft = { "rust" },
+  },
   -- snacks.nvim: modern utility plugins collection (additional features, not replacements)
   {
     "folke/snacks.nvim",
@@ -310,6 +319,10 @@ local plugins = {
 
 require("lazy").setup(plugins, {
   defaults = { lazy = true },
+  change_detection = {
+    enabled = true, -- Automatically check for config file changes
+    notify = true, -- Show notification when changes detected
+  },
   performance = {
     rtp = {
       disabled_plugins = { "tohtml", "gzip", "zipPlugin", "tarPlugin" },

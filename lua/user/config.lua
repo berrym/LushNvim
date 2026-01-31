@@ -62,9 +62,9 @@ M.setup_sources = function(b)
     b.formatting.stylua,
     b.formatting.cbfmt,
     b.formatting.shfmt,
-    b.formatting.gofumpt,
-    b.formatting.goimports_reviser,
-    b.formatting.black,
+    -- b.formatting.gofumpt, -- gopls handles this natively
+    -- b.formatting.goimports_reviser, -- gopls handles imports better
+    -- b.formatting.black, -- Replaced by ruff LSP
     b.formatting.prettierd.with({
       filetypes = {
         "javascript",
@@ -77,8 +77,8 @@ M.setup_sources = function(b)
     }),
     b.formatting.cmake_format,
     b.diagnostics.checkmake,
-    b.diagnostics.pylint,
-    b.diagnostics.revive,
+    -- b.diagnostics.pylint, -- Replaced by ruff LSP
+    -- b.diagnostics.revive, -- gopls staticcheck covers this
     -- b.diagnostics.swiftlint,
     b.diagnostics.cmake_lint,
     b.code_actions.gitrebase,
@@ -98,14 +98,16 @@ M.mason_ensure_installed = {
     "clang-format",
     "codelldb",
     "basedpyright",
-    "black",
-    "pylint",
-    "rust-analyzer",
+    "ruff", -- Replaces black, pylint, isort - all-in-one linter/formatter
+    -- "black", -- Replaced by ruff
+    -- "pylint", -- Replaced by ruff
+    -- NOTE: For rust-analyzer, use `rustup component add rust-analyzer` instead
+    -- This keeps rust-analyzer version synced with your toolchain (recommended by rustaceanvim)
     "gopls",
-    "gofumpt",
-    "goimports-reviser",
     "gomodifytags",
-    "revive",
+    -- "gofumpt", -- gopls handles formatting with gofumpt enabled
+    -- "goimports-reviser", -- gopls handles imports natively (faster)
+    -- "revive", -- gopls staticcheck covers most linting
     "prettierd",
     "typescript-language-server",
     "css-lsp",
@@ -211,6 +213,7 @@ M.treesitter_ensure_installed = {
 -- Default value is true if left blank
 M.autocommands = {
   alpha_folding = true,
+  auto_reload = true, -- Auto-reload buffers when files change externally
   autochdir = true,
   claude_code_reload = true, -- Auto-reload buffers when Claude Code edits files
   cmp = true,
@@ -262,18 +265,12 @@ M.enable_plugins = {
   zen = true,
   -- AI Coding Assistant
   claudecode = true,
+  -- Rust
+  rustaceanvim = true,
 }
 
 -- add extra plugins in here
 M.plugins = {
-  {
-    "simrat39/rust-tools.nvim",
-    ft = "rust",
-    cond = M.enable_plugins.rust_tools,
-    config = function()
-      require("user.plugin-configs.rust-tools")
-    end,
-  },
   {
     "folke/tokyonight.nvim",
     lazy = false,
@@ -332,8 +329,32 @@ M.lsp_configs = {
         },
       },
     },
-    cmd = { "clangd" },
+    cmd = {
+      "clangd",
+      "--background-index", -- Index project in background
+      "--clang-tidy", -- Enable clang-tidy diagnostics
+      "--header-insertion=iwyu", -- Include What You Use
+      "--completion-style=detailed", -- Detailed completion items
+      "--function-arg-placeholders", -- Placeholders for function args
+      "--fallback-style=llvm", -- Fallback formatting style
+      "--pch-storage=memory", -- Store PCH in memory (faster)
+    },
     filetypes = { "c", "cpp", "objc", "objcpp", "cuda", "proto" },
+    init_options = {
+      usePlaceholders = true,
+      completeUnimported = true,
+      clangdFileStatus = true,
+    },
+    settings = {
+      clangd = {
+        InlayHints = {
+          Enabled = true,
+          ParameterNames = true,
+          DeducedTypes = true,
+          Designators = true,
+        },
+      },
+    },
   },
   lua_ls = {
     cmd = { "lua-language-server" },
@@ -356,12 +377,82 @@ M.lsp_configs = {
     filetypes = { "python" },
     settings = {
       basedpyright = {
+        -- Disable import organization (ruff handles this)
+        disableOrganizeImports = true,
         analysis = {
           autoSearchPaths = true,
           diagnosticMode = "openFilesOnly",
           useLibraryCodeForTypes = true,
+          -- "off", "basic", "standard", "strict", "all"
           typeCheckingMode = "standard",
+          -- Ignore all files for linting (ruff handles this)
+          ignore = { "*" },
         },
+      },
+    },
+  },
+  ruff = {
+    cmd = { "ruff", "server" },
+    filetypes = { "python" },
+    init_options = {
+      settings = {
+        -- Ruff language server settings
+        lineLength = 100,
+        -- Enable all default rules plus isort
+        lint = {
+          select = { "E", "F", "W", "I" }, -- E/F/W: pyflakes/pycodestyle, I: isort
+        },
+        format = {
+          -- Use the same style as black
+          lineLength = 100,
+        },
+      },
+    },
+  },
+  gopls = {
+    cmd = { "gopls" },
+    filetypes = { "go", "gomod", "gowork", "gotmpl" },
+    settings = {
+      gopls = {
+        -- Formatting
+        gofumpt = true, -- Use gofumpt for stricter formatting
+        -- Linting & Analysis
+        staticcheck = true,
+        analyses = {
+          nilness = true,
+          unusedparams = true,
+          unusedwrite = true,
+          useany = true,
+          shadow = true,
+        },
+        -- Completion
+        completeUnimported = true,
+        usePlaceholders = true,
+        -- Codelenses
+        codelenses = {
+          generate = true,
+          gc_details = true,
+          run_govulncheck = true,
+          test = true,
+          tidy = true,
+          upgrade_dependency = true,
+          vendor = true,
+        },
+        -- Hints (inlay hints)
+        hints = {
+          assignVariableTypes = true,
+          compositeLiteralFields = true,
+          compositeLiteralTypes = true,
+          constantValues = true,
+          functionTypeParameters = true,
+          parameterNames = true,
+          rangeVariableTypes = true,
+        },
+        -- Semantic tokens
+        semanticTokens = true,
+        -- Diagnostics
+        diagnosticsDelay = "500ms",
+        diagnosticsTrigger = "Edit",
       },
     },
   },

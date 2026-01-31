@@ -65,9 +65,9 @@ M.setup_sources = function(b)
     -- b.formatting.stylua,
     -- b.formatting.cbfmt,
     -- b.formatting.shfmt,
-    -- b.formatting.gofumpt,
-    -- b.formatting.goimports_reviser,
-    -- b.formatting.black,
+    -- b.formatting.gofumpt, -- gopls handles this natively
+    -- b.formatting.goimports_reviser, -- gopls handles imports better
+    -- b.formatting.black, -- Replaced by ruff LSP
     -- b.formatting.prettierd.with({
     --   filetypes = {
     --     "javascript",
@@ -80,8 +80,8 @@ M.setup_sources = function(b)
     -- }),
     -- b.formatting.cmake_format,
     -- b.diagnostics.checkmake,
-    -- b.diagnostics.pylint,
-    -- b.diagnostics.revive,
+    -- b.diagnostics.pylint, -- Replaced by ruff LSP
+    -- b.diagnostics.revive, -- gopls staticcheck covers this
     -- b.diagnostics.cmake_lint,
     -- b.code_actions.gitrebase,
     -- b.code_actions.gitsigns,
@@ -96,26 +96,28 @@ M.mason_ensure_installed = {
   null_ls = {
     --   "autotools-language-server",
     --   "basedpyright",
-    --   "black",
+    --   "ruff", -- Replaces black, pylint, isort - all-in-one linter/formatter
+    --   "black", -- Replaced by ruff
     --   "checkmake",
     --   "clang-format",
     --   "clangd",
     --   "codelldb",
     --   "css-lsp",
-    --   "gofumpt",
-    --   "goimports-reviser",
-    --   "gomodifytags",
     --   "gopls",
+    --   "gomodifytags",
+    --   "gofumpt", -- gopls handles formatting with gofumpt enabled
+    --   "goimports-reviser", -- gopls handles imports natively (faster)
     --   "html-lsp",
     --   "json-lsp",
     "lua-language-server",
     --   "mesonlsp",
     --   "prettierd",
-    --   "pylint",
-    --   "revive",
+    --   "pylint", -- Replaced by ruff
+    --   "revive", -- gopls staticcheck covers most linting
     --   "ruby-lsp",
     --   "rubyfmt",
-    --   "rust-analyzer",
+    --   NOTE: For rust-analyzer, use `rustup component add rust-analyzer` instead
+    --   This keeps rust-analyzer version synced with your toolchain (recommended by rustaceanvim)
     --   "shfmt",
     "stylua",
     --   "typescript-language-server",
@@ -214,6 +216,7 @@ M.treesitter_ensure_installed = {
 -- Default value is true if left blank
 M.autocommands = {
   alpha_folding = true,
+  auto_reload = true, -- Auto-reload buffers when files change externally
   cmp = true,
   css_colorizer = true,
   remember_file_state = true,
@@ -260,18 +263,13 @@ M.enable_plugins = {
   ufo = true,
   whichkey = true,
   zen = true,
+  -- Rust
+  rustaceanvim = true,
 }
 
 -- add extra plugins in here
+-- NOTE: rustaceanvim is now a core plugin in lazy.lua, toggle via enable_plugins.rustaceanvim
 M.plugins = {
-  -- {
-  --   "simrat39/rust-tools.nvim",
-  --   ft = "rust",
-  --   cond = M.enable_plugins.rust_tools,
-  --   config = function()
-  --     require("user.plugin-configs.rust-tools")
-  --   end,
-  -- },
   -- {
   --   "folke/tokyonight.nvim",
   --   lazy = false,
@@ -307,17 +305,21 @@ M.plugins = {
 }
 
 M.lsp_configs = {
+  -- C/C++: clangd with clang-tidy, background indexing, and inlay hints
   -- clangd = {
-  --   capabilities = {
-  --     offsetEncoding = { "utf-8", "utf-16" },
-  --     textDocument = {
-  --       completion = {
-  --         editsNearCursor = true,
-  --       },
-  --     },
+  --   capabilities = { offsetEncoding = { "utf-8", "utf-16" } },
+  --   cmd = {
+  --     "clangd",
+  --     "--background-index",
+  --     "--clang-tidy",
+  --     "--header-insertion=iwyu",
+  --     "--completion-style=detailed",
+  --     "--function-arg-placeholders",
+  --     "--fallback-style=llvm",
   --   },
-  --   cmd = { "clangd" },
   --   filetypes = { "c", "cpp", "objc", "objcpp", "cuda", "proto" },
+  --   init_options = { usePlaceholders = true, completeUnimported = true },
+  --   settings = { clangd = { InlayHints = { Enabled = true, ParameterNames = true } } },
   -- },
   lua_ls = {
     cmd = { "lua-language-server" },
@@ -335,17 +337,48 @@ M.lsp_configs = {
     },
     log_level = 2,
   },
+  -- Python: basedpyright (type checking) + ruff (linting/formatting)
   -- basedpyright = {
   --   cmd = { "basedpyright-langserver", "--stdio" },
   --   filetypes = { "python" },
   --   settings = {
   --     basedpyright = {
+  --       disableOrganizeImports = true, -- ruff handles this
   --       analysis = {
   --         autoSearchPaths = true,
   --         diagnosticMode = "openFilesOnly",
   --         useLibraryCodeForTypes = true,
-  --         typeCheckingMode = "standard",
+  --         typeCheckingMode = "standard", -- "off", "basic", "standard", "strict", "all"
+  --         ignore = { "*" }, -- ruff handles linting
   --       },
+  --     },
+  --   },
+  -- },
+  -- ruff = {
+  --   cmd = { "ruff", "server" },
+  --   filetypes = { "python" },
+  --   init_options = {
+  --     settings = {
+  --       lineLength = 100,
+  --       lint = {
+  --         select = { "E", "F", "W", "I" }, -- pyflakes/pycodestyle + isort
+  --       },
+  --     },
+  --   },
+  -- },
+  -- Go: gopls with gofumpt, staticcheck, codelenses, and inlay hints
+  -- gopls = {
+  --   cmd = { "gopls" },
+  --   filetypes = { "go", "gomod", "gowork", "gotmpl" },
+  --   settings = {
+  --     gopls = {
+  --       gofumpt = true,
+  --       staticcheck = true,
+  --       analyses = { nilness = true, unusedparams = true, unusedwrite = true },
+  --       codelenses = { generate = true, gc_details = true, test = true, tidy = true },
+  --       hints = { parameterNames = true, assignVariableTypes = true },
+  --       completeUnimported = true,
+  --       usePlaceholders = true,
   --     },
   --   },
   -- },
