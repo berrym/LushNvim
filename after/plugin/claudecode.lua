@@ -5,27 +5,50 @@ if utils.enabled(group, "claudecode") then
 	-- Default configuration
 	local default_config = {
 		terminal_cmd = "claude",
-		split_side = "bottom", -- "left", "right", "top", "bottom"
-		split_height_percentage = 0.35,
-		split_width_percentage = 0.40,
 		auto_close = true,
 		track_selection = true,
 		auto_start = true,
 		log_level = "warn",
 		diff_opts = {
 			auto_close_on_accept = true,
-			vertical_split = true,
+			layout = "vertical",
+		},
+		terminal = {
+			split_side = "right",
+			split_width_percentage = 0.40,
 		},
 	}
 
 	-- Current position (can be changed at runtime)
-	_G.claudecode_position = _G.claudecode_position or "bottom"
+	_G.claudecode_position = _G.claudecode_position or "right"
+
+	-- Position configs for snacks_win_opts (bypasses plugin validation for top/bottom)
+	local position_configs = {
+		left = { position = "left", width = 0.40, height = 0 },
+		right = { position = "right", width = 0.40, height = 0 },
+		top = { position = "top", height = 0.35, width = 0 },
+		bottom = { position = "bottom", height = 0.35, width = 0 },
+	}
 
 	-- Function to apply config with current position
 	local function apply_config(position)
-		_G.claudecode_position = position or _G.claudecode_position
+		local pos_config = position_configs[position]
+		if not pos_config then
+			vim.notify("Invalid position: " .. tostring(position), vim.log.levels.WARN)
+			position = "right"
+			pos_config = position_configs.right
+		end
+		_G.claudecode_position = position
+
+		-- For left/right, use native split_side; for top/bottom, use snacks_win_opts
+		local terminal_config = {
+			split_side = (position == "left" or position == "right") and position or "right",
+			split_width_percentage = pos_config.width > 0 and pos_config.width or 0.40,
+			snacks_win_opts = pos_config,
+		}
+
 		local config = vim.tbl_deep_extend("force", default_config, {
-			split_side = _G.claudecode_position,
+			terminal = terminal_config,
 		})
 		require("claudecode").setup(config)
 	end
