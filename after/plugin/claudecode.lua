@@ -9,11 +9,13 @@ if utils.enabled(group, "claudecode") then
 		track_selection = true,
 		auto_start = true,
 		log_level = "warn",
+		diff_provider = "snacks",
 		diff_opts = {
 			auto_close_on_accept = true,
 			layout = "vertical",
 		},
 		terminal = {
+			show_native_term_exit_tip = false,
 			split_side = "right",
 			split_width_percentage = 0.40,
 		},
@@ -53,8 +55,8 @@ if utils.enabled(group, "claudecode") then
 		require("claudecode").setup(config)
 	end
 
-	-- Initial setup
-	apply_config()
+	-- Initial setup with current position
+	apply_config(_G.claudecode_position)
 
 	-- Create commands for position switching
 	local positions = { "left", "right", "top", "bottom" }

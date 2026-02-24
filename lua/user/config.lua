@@ -303,19 +303,11 @@ M.plugins = {
       require("user.plugin-configs.monokai-pro")
     end,
   },
-  -- AI Coding Assistant
+  -- AI Coding Assistant (configured in after/plugin/claudecode.lua)
   {
     "coder/claudecode.nvim",
     event = "VeryLazy",
     cond = M.enable_plugins.claudecode,
-    opts = {
-      -- Terminal window settings
-      terminal = {
-        show_native_term_exit_tip = false,
-      },
-      -- Diff settings
-      diff_provider = "snacks", -- or "native" or "mini_diff"
-    },
   },
 }
 

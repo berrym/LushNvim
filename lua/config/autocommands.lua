@@ -69,14 +69,14 @@ if utils.enabled(group, "css_colorizer") and utils.enabled(plugin, "colorizer") 
   })
 end
 
--- disables autocomplete in some filetypes
+-- disables autocomplete in some filetypes (blink.cmp)
 if utils.enabled(group, "cmp") and utils.enabled(plugin, "cmp") then
   autocmd("FileType", {
-    desc = "disable cmp in certain filetypes",
+    desc = "disable completion in certain filetypes",
     pattern = { "gitcommit", "gitrebase", "text" },
     group = augroup("cmp_disable", { clear = true }),
     callback = function()
-      require("cmp").setup.buffer({ enabled = false })
+      vim.b.completion = false
     end,
   })
 end
