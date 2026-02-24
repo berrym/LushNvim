@@ -84,11 +84,8 @@ M.update_all = function()
   require("lazy").sync({ wait = true })
   M.notify_info("Updating Mason packages...")
   M.update_mason()
-  -- Update treesitter parsers
-  local ok, ts = pcall(require, "nvim-treesitter")
-  if ok and ts.update then
-    ts.update()
-  end
+  -- Update treesitter parsers via command (stable across branches)
+  vim.cmd("TSUpdate")
   M.notify_info("LushNvim updated!")
 end
 

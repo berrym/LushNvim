@@ -3,22 +3,28 @@ local group = exist and type(user_config) == "table" and user_config.enable_plug
 local enabled = require("config.utils").enabled
 
 if enabled(group, "lsp") then
+  -- Get user LSP configs and merge blink.cmp capabilities
+  local configs = exist and type(user_config) == "table" and user_config.lsp_configs or {}
+
+  -- Wildcard config: apply blink.cmp capabilities to ALL servers as a baseline
+  local ok_blink, blink = pcall(require, "blink.cmp")
+  local base_capabilities = ok_blink and blink.get_lsp_capabilities() or {}
+  vim.lsp.config("*", { capabilities = base_capabilities })
+
+  -- Apply per-server user configs (with blink.cmp capabilities merged)
+  if type(configs) == "table" then
+    for server_name, config in pairs(configs) do
+      local capabilities = ok_blink and blink.get_lsp_capabilities(config.capabilities) or config.capabilities or {}
+      local lsp_config = vim.tbl_deep_extend("force", config, { capabilities = capabilities })
+      vim.lsp.config(server_name, lsp_config)
+    end
+  end
+
+  -- Mason setup (must come after vim.lsp.config calls)
   require("mason").setup()
   require("mason-lspconfig").setup({
-    handlers = {
-      function(server_name)
-        exist, user_config = pcall(require, "user.config")
-        local configs = exist and type(user_config) == "table" and user_config.lsp_configs or {}
-        local config = type(configs) == "table" and configs[server_name] or {}
-        local capabilities = require("blink.cmp").get_lsp_capabilities(config.capabilities)
-        -- Merge user config with capabilities
-        local lsp_config = vim.tbl_deep_extend("force", config, {
-          capabilities = capabilities,
-        })
-        vim.lsp.config(server_name, lsp_config)
-        vim.lsp.enable(server_name)
-      end,
-    },
+    -- automatic_enable = true is the default in v2; servers installed via Mason
+    -- are automatically enabled via vim.lsp.enable() using configs registered above
   })
 
   vim.api.nvim_create_autocmd("LspAttach", {

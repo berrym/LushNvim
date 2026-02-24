@@ -184,9 +184,7 @@ local plugins = {
     "kylechui/nvim-surround",
     cond = enabled(group, "surround"),
     event = "VimEnter",
-    config = function()
-      require("nvim-surround").setup()
-    end,
+    opts = {},
   },
   {
     "nvim-treesitter/nvim-treesitter",
@@ -194,7 +192,6 @@ local plugins = {
     cond = enabled(group, "treesitter"),
     lazy = false,
     build = ":TSUpdate",
-    event = { "BufReadPost", "BufNewFile" },
     dependencies = {
       { "nvim-treesitter/nvim-treesitter-textobjects", branch = "main" },
       {
