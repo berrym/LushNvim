@@ -46,7 +46,7 @@ if utils.enabled(group, "alpha") then
   end
 
   if utils.enabled(group, "project") then
-    table.insert(buttons, dashboard.button("p", "  Open project", ":Telescope projects<CR>"))
+    table.insert(buttons, dashboard.button("p", "  Open project", ":lua telescope_open_project()<CR>"))
   end
 
   table.insert(buttons, dashboard.button("q", "󰩈  Quit", ":qall<CR>"))
