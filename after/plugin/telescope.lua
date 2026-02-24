@@ -32,6 +32,89 @@ if utils.enabled(group, "telescope") then
     telescope.load_extension("projects")
   end
 
+  -- Custom session picker: load or delete sessions via telescope
+  _G.telescope_session_pick = function()
+    local ok_sm, _ = pcall(require, "session_manager")
+    if not ok_sm then return end
+    local sm_utils = require("session_manager.utils")
+    local actions = require("telescope.actions")
+    local state = require("telescope.actions.state")
+    local pickers = require("telescope.pickers")
+    local finders = require("telescope.finders")
+    local conf = require("telescope.config").values
+    local entry_display = require("telescope.pickers.entry_display")
+
+    local function get_sessions()
+      local sessions = sm_utils.get_sessions({ silent = true })
+      return sessions or {}
+    end
+
+    local displayer = entry_display.create({
+      separator = " ",
+      items = { { width = 30 }, { remaining = true } },
+    })
+
+    local function make_finder(sessions)
+      return finders.new_table({
+        results = sessions,
+        entry_maker = function(session)
+          local dir = session.dir.filename or tostring(session.dir)
+          local name = vim.fn.fnamemodify(dir, ":t")
+          return {
+            display = function(e) return displayer({ e.name, { dir, "Comment" } }) end,
+            name = name,
+            value = session,
+            ordinal = name .. " " .. dir,
+          }
+        end,
+      })
+    end
+
+    local sessions = get_sessions()
+
+    pickers.new({}, {
+      prompt_title = "Sessions  <C-d> delete",
+      finder = make_finder(sessions),
+      previewer = false,
+      sorter = conf.generic_sorter({}),
+      attach_mappings = function(prompt_bufnr, map)
+        -- Load session on enter
+        actions.select_default:replace(function()
+          local selected = state.get_selected_entry()
+          actions.close(prompt_bufnr)
+          if not selected then return end
+
+          local dir = selected.value.dir.filename or tostring(selected.value.dir)
+          vim.cmd("cd " .. vim.fn.fnameescape(dir))
+          sm_utils.load_session(selected.value.filename, false)
+        end)
+
+        -- Delete session with <C-d>
+        local function delete_selected()
+          local selected = state.get_selected_entry()
+          if not selected then return end
+
+          local dir = selected.value.dir.filename or tostring(selected.value.dir)
+          local name = vim.fn.fnamemodify(dir, ":t")
+          vim.ui.select({ "Yes", "No" }, { prompt = "Delete session for " .. name .. "?" }, function(choice)
+            if choice ~= "Yes" then return end
+            sm_utils.delete_session(selected.value.filename)
+            utils.notify_info("Deleted session: " .. name, "Session")
+
+            -- Refresh picker with updated session list
+            local current_picker = state.get_current_picker(prompt_bufnr)
+            sessions = get_sessions()
+            current_picker:refresh(make_finder(sessions), { reset_prompt = false })
+          end)
+        end
+        map("i", "<C-d>", delete_selected)
+        map("n", "<C-d>", delete_selected)
+
+        return true
+      end,
+    }):find()
+  end
+
   -- Custom project picker: cd to project, restore session or open fresh workspace
   -- Used by alpha dashboard "Open project" button
   _G.telescope_open_project = function()
@@ -55,7 +138,7 @@ if utils.enabled(group, "telescope") then
     })
 
     pickers.new({}, {
-      prompt_title = "Open Project",
+      prompt_title = "Open Project  <C-d> delete session",
       finder = finders.new_table({
         results = results,
         entry_maker = function(entry)
@@ -70,7 +153,7 @@ if utils.enabled(group, "telescope") then
       }),
       previewer = false,
       sorter = conf.generic_sorter({}),
-      attach_mappings = function(prompt_bufnr)
+      attach_mappings = function(prompt_bufnr, map)
         actions.select_default:replace(function()
           local selected = state.get_selected_entry(prompt_bufnr)
           actions.close(prompt_bufnr)
@@ -91,6 +174,44 @@ if utils.enabled(group, "telescope") then
             vim.cmd("Neotree toggle left")
           end
         end)
+
+        -- Delete session for selected project with <C-d>
+        local function delete_project_session()
+          local selected = state.get_selected_entry()
+          if not selected then return end
+
+          local ok_sm = pcall(require, "session_manager")
+          if not ok_sm then return end
+          local sm_utils = require("session_manager.utils")
+
+          local project_dir = selected.value
+          local name = vim.fn.fnamemodify(project_dir, ":t")
+
+          -- Find session matching this project directory
+          local sessions = sm_utils.get_sessions({ silent = true }) or {}
+          local target = nil
+          for _, session in ipairs(sessions) do
+            local dir = session.dir.filename or tostring(session.dir)
+            if dir == project_dir then
+              target = session
+              break
+            end
+          end
+
+          if not target then
+            utils.notify_info("No session for " .. name, "Session")
+            return
+          end
+
+          vim.ui.select({ "Yes", "No" }, { prompt = "Delete session for " .. name .. "?" }, function(choice)
+            if choice ~= "Yes" then return end
+            sm_utils.delete_session(target.filename)
+            utils.notify_info("Deleted session: " .. name, "Session")
+          end)
+        end
+        map("i", "<C-d>", delete_project_session)
+        map("n", "<C-d>", delete_project_session)
+
         return true
       end,
     }):find()

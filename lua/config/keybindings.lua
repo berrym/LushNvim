@@ -177,8 +177,9 @@ map("n", "<leader>qa", "<CMD>wqa<CR>", { desc = "Save all and quit" })
 -- ──────────────────────────────────────────────────────────────────────────────
 if enabled(group, "session_manager") then
   map("n", "<leader>ss", "<CMD>SessionManager save_current_session<CR>", { desc = "Save session" })
-  map("n", "<leader>sl", "<CMD>SessionManager load_session<CR>", { desc = "Load session" })
+  map("n", "<leader>sl", function() telescope_session_pick() end, { desc = "Load session" })
   map("n", "<leader>so", "<CMD>SessionManager load_last_session<CR>", { desc = "Open last session" })
+  map("n", "<leader>sd", function() telescope_session_pick() end, { desc = "Delete session" })
 end
 
 -- ──────────────────────────────────────────────────────────────────────────────
