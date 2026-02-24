@@ -144,6 +144,16 @@ local plugins = {
       { "rafamadriz/friendly-snippets" },
       { "L3MON4D3/LuaSnip",            version = "v2.*" },
       { "echasnovski/mini.snippets" },
+      {
+        "zbirenbaum/copilot.lua",
+        cond = enabled(group, "copilot"),
+        cmd = "Copilot",
+        event = "InsertEnter",
+      },
+      {
+        "fang2hou/blink-copilot",
+        cond = enabled(group, "copilot"),
+      },
     },
     -- use a release tag to download pre-built binaries
     version = "*",

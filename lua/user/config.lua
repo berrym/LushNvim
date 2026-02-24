@@ -235,6 +235,7 @@ M.enable_plugins = {
   bufferline = true,
   cmp = true,
   colorizer = true,
+  copilot = true,
   context = true,
   dap = true,
   diffview = true,
