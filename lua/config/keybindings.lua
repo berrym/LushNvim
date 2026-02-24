@@ -210,6 +210,9 @@ if enabled(group, "notify") then
   map("n", "<leader>un", function() require("notify").dismiss() end, { desc = "Dismiss notifications" })
 end
 
+-- Colorscheme picker
+map("n", "<leader>uc", "<CMD>LushColors<CR>", { desc = "Colorscheme picker" })
+
 -- Config reload
 map("n", "<leader>ur", "<CMD>LushReload<CR>", { desc = "Reload config (options/keymaps)" })
 
