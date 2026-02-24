@@ -34,6 +34,11 @@ local plugins = {
     lazy = false,
   },
   {
+    "sindrets/diffview.nvim",
+    cond = enabled(group, "diffview"),
+    cmd = { "DiffviewOpen", "DiffviewClose", "DiffviewFileHistory", "DiffviewToggleFiles", "DiffviewRefresh" },
+  },
+  {
     "lewis6991/gitsigns.nvim",
     cond = enabled(group, "gitsigns"),
     event = "VimEnter",

@@ -237,6 +237,7 @@ M.enable_plugins = {
   colorizer = true,
   context = true,
   dap = true,
+  diffview = true,
   gitsigns = true,
   hop = true,
   img_clip = true,

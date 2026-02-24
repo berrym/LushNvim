@@ -324,7 +324,25 @@ if enabled(group, "toggleterm") then
 end
 
 -- ══════════════════════════════════════════════════════════════════════════════
--- [9] Gitsigns on_attach Callback
+-- [9] Diffview
+-- ══════════════════════════════════════════════════════════════════════════════
+
+if enabled(group, "diffview") then
+  map("n", "<leader>go", function()
+    local lib = require("diffview.lib")
+    if lib.get_current_view() then
+      vim.cmd.DiffviewClose()
+    else
+      vim.cmd.DiffviewOpen()
+    end
+  end, { desc = "Toggle diffview" })
+  map("n", "<leader>gh", "<CMD>DiffviewFileHistory %<CR>", { desc = "File history" })
+  map("n", "<leader>gH", "<CMD>DiffviewFileHistory<CR>", { desc = "Branch history" })
+  map("v", "<leader>gh", ":DiffviewFileHistory<CR>", { desc = "Selection history" })
+end
+
+-- ══════════════════════════════════════════════════════════════════════════════
+-- [10] Gitsigns on_attach Callback
 -- ══════════════════════════════════════════════════════════════════════════════
 
 if enabled(group, "gitsigns") then
@@ -364,7 +382,7 @@ if enabled(group, "gitsigns") then
 end
 
 -- ══════════════════════════════════════════════════════════════════════════════
--- [10] Insert/Command Mode Mappings
+-- [11] Insert/Command Mode Mappings
 -- ══════════════════════════════════════════════════════════════════════════════
 
 -- Insert mode navigation

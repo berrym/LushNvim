@@ -9,7 +9,6 @@ if utils.enabled(group, "claudecode") then
 		track_selection = true,
 		auto_start = true,
 		log_level = "warn",
-		diff_provider = "snacks",
 		diff_opts = {
 			auto_close_on_accept = true,
 			layout = "vertical",
