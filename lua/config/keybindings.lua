@@ -73,11 +73,11 @@ if enabled(group, "claudecode") then
   -- +Diff subgroup
   map("n", "<leader>ada", "<CMD>ClaudeCodeDiffAccept<CR>", { desc = "Accept diff" })
   map("n", "<leader>add", "<CMD>ClaudeCodeDiffDeny<CR>", { desc = "Deny diff" })
-  -- +Position subgroup (like neo-tree)
-  map("n", "<leader>awb", function() _G.claudecode_set_position("bottom") end, { desc = "Window bottom" })
-  map("n", "<leader>awt", function() _G.claudecode_set_position("top") end, { desc = "Window top" })
+  -- +Position subgroup (uses snacks_win_opts for top/bottom support)
   map("n", "<leader>awl", function() _G.claudecode_set_position("left") end, { desc = "Window left" })
   map("n", "<leader>awr", function() _G.claudecode_set_position("right") end, { desc = "Window right" })
+  map("n", "<leader>awt", function() _G.claudecode_set_position("top") end, { desc = "Window top" })
+  map("n", "<leader>awb", function() _G.claudecode_set_position("bottom") end, { desc = "Window bottom" })
 end
 
 -- ──────────────────────────────────────────────────────────────────────────────
