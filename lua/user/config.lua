@@ -96,7 +96,6 @@ M.mason_ensure_installed = {
     "lua-language-server",
     "clangd",
     "clang-format",
-    "codelldb",
     "basedpyright",
     "ruff", -- Replaces black, pylint, isort - all-in-one linter/formatter
     -- "black", -- Replaced by ruff
@@ -122,7 +121,9 @@ M.mason_ensure_installed = {
     -- "swiftlint",
   },
   dap = {
-    "python",
+    "python",    -- debugpy for Python
+    "delve",     -- delve for Go
+    "codelldb",  -- codelldb for C/C++/Rust
   },
 }
 
@@ -238,6 +239,9 @@ M.enable_plugins = {
   copilot = true,
   context = true,
   dap = true,
+  dap_python = true,
+  dap_go = true,
+  persistent_breakpoints = true,
   diffview = true,
   gitsigns = true,
   hop = true,

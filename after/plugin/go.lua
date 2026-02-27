@@ -85,3 +85,38 @@ if utils.enabled(group, "lsp") then
 		end,
 	})
 end
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- Go Debug Configuration (nvim-dap-go)
+-- ════════════════════════════════════════════════════════════════════════════
+if utils.enabled(group, "dap") and utils.enabled(group, "dap_go") then
+	local ok_dap_go, dap_go = pcall(require, "dap-go")
+	if ok_dap_go then
+		dap_go.setup({
+			delve = {
+				path = vim.fn.stdpath("data") .. "/mason/bin/dlv",
+				initialize_timeout_sec = 20,
+				port = "${port}",
+			},
+		})
+
+		vim.api.nvim_create_autocmd("FileType", {
+			pattern = { "go", "gomod" },
+			callback = function(args)
+				local opts = { buffer = args.buf, silent = true }
+
+				vim.keymap.set("n", "<leader>Gd", function()
+					require("dap").continue()
+				end, vim.tbl_extend("force", opts, { desc = "Debug file" }))
+
+				vim.keymap.set("n", "<leader>GT", function()
+					dap_go.debug_test()
+				end, vim.tbl_extend("force", opts, { desc = "Debug test" }))
+
+				vim.keymap.set("n", "<leader>GL", function()
+					dap_go.debug_last_test()
+				end, vim.tbl_extend("force", opts, { desc = "Debug last test" }))
+			end,
+		})
+	end
+end

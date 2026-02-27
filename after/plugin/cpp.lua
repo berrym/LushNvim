@@ -76,3 +76,33 @@ if utils.enabled(group, "lsp") then
 		end,
 	})
 end
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- C/C++ Debug Keybindings (adapter + configs auto-registered by mason-nvim-dap)
+-- ════════════════════════════════════════════════════════════════════════════
+if utils.enabled(group, "dap") then
+	vim.api.nvim_create_autocmd("FileType", {
+		pattern = { "c", "cpp", "objc", "objcpp", "cuda" },
+		callback = function(args)
+			local opts = { buffer = args.buf, silent = true }
+
+			vim.keymap.set("n", "<leader>Cd", function()
+				require("dap").continue()
+			end, vim.tbl_extend("force", opts, { desc = "Debug (pick config)" }))
+
+			vim.keymap.set("n", "<leader>CD", function()
+				local path = vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/", "file")
+				if path == "" then return end
+				path = vim.fn.expand(path)
+				require("dap").run({
+					type = "codelldb",
+					request = "launch",
+					name = "Launch " .. vim.fn.fnamemodify(path, ":t"),
+					program = path,
+					cwd = "${workspaceFolder}",
+					stopOnEntry = false,
+				})
+			end, vim.tbl_extend("force", opts, { desc = "Debug executable (path)" }))
+		end,
+	})
+end

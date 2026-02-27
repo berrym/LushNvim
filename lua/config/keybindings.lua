@@ -112,18 +112,8 @@ if enabled(group, "trouble") then
 end
 
 -- ──────────────────────────────────────────────────────────────────────────────
--- <leader>d: Debug
+-- <leader>d: Debug  (keybindings in lazy.lua nvim-dap spec, keys-triggered loading)
 -- ──────────────────────────────────────────────────────────────────────────────
-if enabled(group, "dap") then
-  local dap = require("dap")
-  map("n", "<leader>dc", dap.continue, { desc = "Continue" })
-  map("n", "<leader>dn", dap.step_over, { desc = "Step over" })
-  map("n", "<leader>di", dap.step_into, { desc = "Step into" })
-  map("n", "<leader>do", dap.step_out, { desc = "Step out" })
-  map("n", "<leader>db", dap.toggle_breakpoint, { desc = "Toggle breakpoint" })
-  map("n", "<leader>dq", function() dap.disconnect({ terminateDebuggee = true }) end, { desc = "Quit debugger" })
-  map("n", "<leader>du", function() require("dapui").toggle() end, { desc = "Toggle DAP UI" })
-end
 
 -- ──────────────────────────────────────────────────────────────────────────────
 -- <leader>f: Find

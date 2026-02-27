@@ -154,6 +154,23 @@ if utils.enabled(group, "lualine") then
     },
   })
 
+  -- DAP status indicator (visible only during active debug sessions)
+  if utils.enabled(group, "dap") then
+    ins_left({
+      function()
+        local ok, dap = pcall(require, "dap")
+        if not ok then return "" end
+        local status = dap.status()
+        return " " .. (status ~= "" and status or "Active")
+      end,
+      cond = function()
+        local ok, dap = pcall(require, "dap")
+        return ok and dap.session() ~= nil
+      end,
+      color = { fg = colors.orange, gui = "bold" },
+    })
+  end
+
   -- Insert mid section. You can make any number of sections in neovim :)
   -- for lualine it's any number greater then 2
   ins_left({

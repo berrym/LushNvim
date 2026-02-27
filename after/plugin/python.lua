@@ -55,3 +55,38 @@ if utils.enabled(group, "lsp") then
 		end,
 	})
 end
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- Python Debug Configuration (nvim-dap-python)
+-- ════════════════════════════════════════════════════════════════════════════
+if utils.enabled(group, "dap") and utils.enabled(group, "dap_python") then
+	local ok_dap_py, dap_python = pcall(require, "dap-python")
+	if ok_dap_py then
+		local debugpy_path = vim.fn.stdpath("data") .. "/mason/packages/debugpy/venv/bin/python"
+		dap_python.setup(debugpy_path)
+		dap_python.test_runner = "pytest"
+
+		vim.api.nvim_create_autocmd("FileType", {
+			pattern = "python",
+			callback = function(args)
+				local opts = { buffer = args.buf, silent = true }
+
+				vim.keymap.set("n", "<leader>pd", function()
+					require("dap").continue()
+				end, vim.tbl_extend("force", opts, { desc = "Debug file" }))
+
+				vim.keymap.set("n", "<leader>pt", function()
+					dap_python.test_method()
+				end, vim.tbl_extend("force", opts, { desc = "Debug test method" }))
+
+				vim.keymap.set("n", "<leader>pT", function()
+					dap_python.test_class()
+				end, vim.tbl_extend("force", opts, { desc = "Debug test class" }))
+
+				vim.keymap.set("v", "<leader>pd", function()
+					dap_python.debug_selection()
+				end, vim.tbl_extend("force", opts, { desc = "Debug selection" }))
+			end,
+		})
+	end
+end

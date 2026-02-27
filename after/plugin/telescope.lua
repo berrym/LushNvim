@@ -16,6 +16,7 @@ if utils.enabled(group, "telescope") then
       },
     },
   })
+  pcall(function() telescope.load_extension("ui-select") end)
   if utils.enabled(group, "scope") then
     telescope.load_extension("scope")
   end
