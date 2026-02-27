@@ -168,12 +168,27 @@ autocmd("BufWinEnter", {
       "",
     }
     if
-        not vim.bo.modifiable
+        vim.bo.buftype ~= ""
+        or not vim.bo.modifiable
         or vim.tbl_contains(ignoredFT, vim.bo.filetype)
         or not (vim.fn.expand("%:p"):find("^/"))
     then
       return
     end
-    vim.cmd.cd(vim.fn.expand("%:p:h"))
+
+    -- Prefer project root (from project.nvim) over raw file directory
+    local filepath = vim.fn.expand("%:p")
+    local dir
+    local ok, project = pcall(require, "project_nvim.project")
+    if ok then
+      local root = project.get_project_root()
+      if root and filepath:find(root, 1, true) == 1 then
+        dir = root
+      end
+    end
+    if not dir then
+      dir = vim.fn.expand("%:p:h")
+    end
+    vim.cmd.cd(vim.fn.fnameescape(dir))
   end,
 })
