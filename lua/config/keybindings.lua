@@ -184,6 +184,8 @@ map("n", "<leader>tp", "<CMD>tabprevious<CR>", { desc = "Previous tab" })
 if enabled(group, "toggleterm") then
   local git_root = "cd $(git rev-parse --show-toplevel 2>/dev/null) && clear"
   map("n", "<leader>tk", "<CMD>TermExec go_back=0 direction=float cmd='" .. git_root .. "&& tokei'<CR>", { desc = "Tokei" })
+  map("n", "<leader>tb", function() require("config.terminal").btop_toggle() end, { desc = "Btop" })
+  map("n", "<leader>tg", function() require("config.terminal").gdu_toggle() end, { desc = "Gdu" })
 end
 
 -- ──────────────────────────────────────────────────────────────────────────────

@@ -21,8 +21,9 @@
 
 - `lazygit` — integrated git UI via `<leader>gg`
 - `fd` — faster file finding for Telescope
-- `btop` — process management
-- `gdu` — disk usage analytics
+- `btop` — process management via `<leader>tb`
+- `gdu` — disk usage analytics via `<leader>tg`
+- `tokei` — project lines of code via `<leader>tk`
 
 
 ## Installation
