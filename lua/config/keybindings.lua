@@ -243,6 +243,9 @@ map("x", "<A-k>", ":m '<-2<CR>gv=gv", { desc = "Move selection up" })
 -- [7] Misc Mappings
 -- ══════════════════════════════════════════════════════════════════════════════
 
+-- Clear search highlighting
+map("n", "<Esc>", "<CMD>nohlsearch<CR>", { desc = "Clear search highlighting" })
+
 -- Alpha dashboard
 if enabled(group, "alpha") then
   map("n", "<leader>;", "<CMD>Alpha<CR>", { desc = "Dashboard" })
