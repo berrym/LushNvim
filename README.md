@@ -2,12 +2,19 @@
 
 ## About
 
-- LushNvim is a small yet fully featured IDE-like configuration for Neovim.
-- It's ready to use out of the box but meant to be almost completely and very simply modified.
-- No compromise on full IDE-like functionality is made while remaining small and simple.
-- Its goal is to be a typical great personal configuration that also fulfills the role of a distro.
-- Full LSP feature support with autocompletion.
-- A new user should be able to understand the entire config in an afternoon and master it in a day.
+LushNvim is a fully featured IDE-like Neovim configuration that you can understand in an afternoon and master in a day.
+
+The big Neovim distros — LazyVim, AstroNvim, NvChad — give you everything out of the box, but they wrap Neovim in layers of abstraction. Want to change a keybinding? Learn their keybinding API. Want to configure an LSP server? Use their LSP wrapper. Want to add a language? Navigate their extras system. The power is there, but the cost is that customization requires learning the distro itself, not just Neovim. For many developers that's days of reading documentation before they can confidently change anything.
+
+LushNvim solves the opposite problem. It uses native Neovim APIs directly — `vim.keymap.set`, `vim.lsp.config`, `vim.api.nvim_create_autocmd` — with no abstraction layer in between. Every plugin config lives in its own file under `after/plugin/`. You can open any single file and understand it completely without tracing through framework internals. The entire config is flat Lua that reads top to bottom.
+
+What makes it work as a handoff:
+
+- **One file to customize** — `lua/user/config.lua` controls everything: plugins, LSP servers, formatters, debuggers, treesitter parsers, and autocommand behavior. Toggle any feature with a single boolean.
+- **Language bundles** — set `M.languages = { "python", "go", "rust" }` and get LSP, formatting, debugging, and treesitter configured automatically. Override any default with a manual entry that always wins.
+- **No abstraction tax** — what you learn configuring LushNvim is Neovim itself. That knowledge transfers everywhere.
+- **Built-in diagnostics** — `:checkhealth lush` verifies your setup, `:LushInfo` shows what's active in the current buffer.
+- **Full IDE functionality** — LSP with autocompletion, DAP debugging with persistent breakpoints, git integration, file explorer, fuzzy finding, session management, and more. No compromises on capability.
 
 
 ## Prerequisites
