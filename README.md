@@ -7,36 +7,31 @@
 - No compromise on full IDE-like functionality is made while remaining small and simple.
 - Its goal is to be a typical great personal configuration that also fulfills the role of a distro.
 - Full LSP feature support with autocompletion.
-
-
-## Latest Release
-
-v0.1.0
+- A new user should be able to understand the entire config in an afternoon and master it in a day.
 
 
 ## Prerequisites
 
-- Make sure you have installed the latest version of Neovim v0.10.0+.
-- Have `git`, `make`, `pip`, `python`, `npm`, `node`, `cargo` and `ripgrep` installed on your system.
-- Resolve `EACCESS` permissions with npm https://docs.npmjs.com/resolving-eacces-permissions-errors-when-installing-packages-globally
-- A Nerd font is necessary for proper rendering.
+- Neovim v0.10.0+ (latest stable recommended)
+- `git`, `make`, `pip`, `python3`, `npm`, `node`, `cargo`, `ripgrep`
+- A [Nerd Font](https://www.nerdfonts.com/) for proper icon rendering
+- Resolve `EACCESS` permissions with npm: https://docs.npmjs.com/resolving-eacces-permissions-errors-when-installing-packages-globally
 
-## Optional Prerequisites
+### Optional
 
-- Install `lazygit`. This enables `<leader>gg` to launch lazygit for integrated and enhanced Git experience.
-- Install `btop` for process management.
-- Install `gdu` for disk usage analytics.
-- Install `tokei` for project lines of code information, `<leader>tk`.
+- `lazygit` — integrated git UI via `<leader>gg`
+- `fd` — faster file finding for Telescope
+- `btop` — process management
+- `gdu` — disk usage analytics
 
 
 ## Installation
 
-Direct installation on a UNIX-like operating system:
+Direct installation:
 
     $ git clone https://github.com/berrym/LushNvim.git ~/.config/nvim
 
-
-Recommended installation to a non-default physical location:
+Recommended — clone to a separate location and symlink:
 
     $ git clone https://github.com/berrym/LushNvim.git ~/path/to/LushNvim
     $ ln -s ~/path/to/LushNvim ~/.config/nvim
@@ -44,25 +39,59 @@ Recommended installation to a non-default physical location:
 
 ## Configuration
 
-LushNvim supports user customization through a dedicated config file. To set up your personal configuration:
+LushNvim is configured through a single file. To set up your personal configuration:
 
     $ cp ~/.config/nvim/lua/example_user_config.lua ~/.config/nvim/lua/user/config.lua
 
-Edit `lua/user/config.lua` following the commentary to customize your setup. The user config allows you to:
+Edit `lua/user/config.lua` to customize your setup.
 
-- Override default Neovim options
-- Configure enabled/disabled plugins
-- Set up custom LSP servers and Mason packages
-- Define custom keybindings
-- Add additional plugins
+### Language Bundles
+
+The fastest way to set up language support. Add one line to your config and get LSP, formatting, debugging, and treesitter configured automatically:
+
+```lua
+M.languages = { "c", "python", "go", "rust", "lua", "web", "bash", "toml", "yaml" }
+```
+
+Each bundle auto-populates `mason_ensure_installed`, `lsp_configs`, `treesitter_ensure_installed`, and `formatting_servers` with sensible defaults. You can still override any individual table — manual entries always take precedence over bundle defaults.
+
+Available bundles: `c` (includes cmake + meson), `python`, `go`, `rust`, `lua`, `web` (JS/TS/HTML/CSS/JSON), `bash`, `toml`, `yaml`
+
+### Manual Configuration
+
+For full control, configure each table individually in `lua/user/config.lua`:
+
+- **`M.enable_plugins`** — toggle any plugin on/off (default: everything enabled)
+- **`M.lsp_configs`** — per-server LSP configuration
+- **`M.mason_ensure_installed`** — tools to auto-install via Mason (LSP servers, formatters, DAP adapters)
+- **`M.treesitter_ensure_installed`** — language parsers
+- **`M.formatting_servers`** — filetypes mapped to formatters
+- **`M.setup_sources()`** — null-ls sources (formatters, linters, code actions)
+- **`M.autocommands`** — toggle autocommand behaviors
+- **`M.plugins`** — add extra plugins
+- **`M.custom_conf()`** — custom startup hook (colorscheme, user commands, etc.)
+
+Both approaches can be combined — use bundles for the base and override specific settings manually.
 
 
-## Post installation
+## Post Installation
 
-- After installation run nvim and let LushNvim download and configure its requirements.
-- This process can take several minutes so be patient.
-- After the initial setup has finished close nvim then reopen it.
-  - You may have luck after installation just opening the start menu, `<leader>;`
+- Run `nvim` and let LushNvim download and configure its requirements.
+- This process can take several minutes on first launch.
+- After the initial setup, close and reopen nvim.
+- Run `:checkhealth lush` to verify everything is installed correctly.
+
+
+## Health Check and Diagnostics
+
+LushNvim includes built-in diagnostic commands:
+
+| Command | Description |
+|---------|-------------|
+| `:checkhealth lush` | Check nvim version, external tools, mason packages, LSP servers, treesitter parsers |
+| `:LushInfo` | Show current buffer's LSP clients, formatters, linters, DAP adapter, treesitter status |
+| `:LushUpdate` | Update plugins, mason packages, and treesitter parsers |
+| `:LushReload` | Hot-reload config (options, keybindings, autocommands) |
 
 
 ## Keybindings
@@ -76,16 +105,25 @@ LushNvim uses a mnemonic keybinding system with which-key integration. Press `<l
 | `<leader>a` | AI/Claude | Claude Code integration |
 | `<leader>b` | Buffer | Buffer management |
 | `<leader>c` | Code/LSP | LSP actions (code action, rename, format) |
-| `<leader>d` | Debug | DAP debugging |
+| `<leader>d` | Debug | DAP debugging (breakpoints, step, terminate) |
 | `<leader>f` | Find | Telescope searches |
 | `<leader>g` | Git | Git operations and hunks |
 | `<leader>n` | Explorer | Neo-tree file explorer |
 | `<leader>q` | Quit | Quit and close operations |
 | `<leader>s` | Session | Session save/load |
 | `<leader>t` | Tab | Tab management |
-| `<leader>u` | UI | UI toggles (spell, wrap, zen) |
+| `<leader>u` | UI | UI toggles (spell, wrap, zen, inlay hints) |
 | `<leader>w` | Window | Window splits and navigation |
 | `<leader>x` | Diagnostics | Trouble diagnostics |
+
+### Language-Specific Leader Groups
+
+| Prefix | Language | Examples |
+|--------|----------|----------|
+| `<leader>C` | C/C++ | Switch header/source, compile, debug |
+| `<leader>G` | Go | Organize imports, struct tags, codelens |
+| `<leader>p` | Python | Organize imports, fix all, format |
+| `<leader>r` | Rust | Hover actions, runnables, expand macro |
 
 ### Direct Navigation
 
@@ -97,6 +135,20 @@ LushNvim uses a mnemonic keybinding system with which-key integration. Press `<l
 | `[d` / `]d` | Previous/next diagnostic |
 | `[c` / `]c` | Previous/next git hunk |
 | `<C-\>` | Toggle terminal |
+| `<Esc>` | Clear search highlights / dismiss notifications |
+
+### Debugging
+
+| Key | Action |
+|-----|--------|
+| `<leader>db` | Toggle breakpoint |
+| `<leader>dB` | Conditional breakpoint |
+| `<leader>dc` | Start / continue debugging |
+| `<leader>di` | Step into |
+| `<leader>do` | Step over |
+| `<leader>dO` | Step out |
+| `<leader>dt` | Terminate debug session |
+| `<leader>du` | Toggle DAP UI |
 
 ### Common Operations
 
@@ -113,40 +165,42 @@ LushNvim uses a mnemonic keybinding system with which-key integration. Press `<l
 
 ## Basic Usage
 
-- On startup you'll be greeted with a menu with many options.
-  - What options appear depends on what features you have enabled or if you're in a git repo etc.
-- LushNvim uses which-key so it will help guide the user on which keystrokes perform commands.
-  - `?` will bring up buffer local keybindings if in a window other than the main, e.g. neotree.
-- `<C-\>` (Ctrl+backslash) will toggle a retractable terminal.
-- Most commands are executed in Normal mode, and start by pressing the `<leader>` which is space.
-- Neotree is a file explorer, when in Normal mode it can be accessed with `<leader>n`:
-  - `<leader>nl` opens neotree in a window on the left side.
-  - `<leader>nr` opens neotree in a window on the right.
-  - `<leader>nf` opens neotree in a floating window.
-  - `<leader>nn` opens neotree like neovim's built-in file explorer netrw.
-- Bufferline is a tabline for neovim buffers, `<leader>b` prefixes buffer related commands:
-  - `<leader>bp` switches to the previous buffer tab.
-  - `<leader>bn` switches to the next buffer tab.
-  - `[b` and `]b` also work for quick buffer navigation.
-  - which-key will help you with all the available keybindings.
-- Sessions can be created and restored:
-  - `<leader>ss` saves the current session.
-  - `<leader>sl` will load a saved session.
-  - On startup pressing `l` at the start menu will load your last session.
-- As mentioned LSP and autocompletion come out of the box:
-  - When performing a completion with an LSP server `<C-space>` will toggle documentation.
-  - If diagnostics indicate error pressing `<leader>xx` will open up trouble for more verbose info.
-  - LSP actions are available under `<leader>c` (code action, rename, format, etc.)
-- Lazy is the package manager it can be used with the command `:Lazy`
-  - Extra plugins can easily be added and managed by editing `lua/user/config.lua`.
-- Mason is the plugin used to manage LSP related tools:
-  - `:Mason` opens the main ui for Mason
-  - `:MasonInstall` will install extensions, `:MasonUninstall` does the opposite.
-  - Configuration of Mason and LSP is easily managed by editing the user config.
-- The command `:LushUpdate` can be used to update most of what gets installed.
-- `:AstroTransparencyOn` and `:AstroTransparencyOff` can be used to toggle transparency.
-- If you like controlling your session using the startup screen it can be opened with `<leader>;`
-- There is much more but this represents a basic starting point.
+- On startup you'll be greeted with a dashboard with common actions.
+  - What options appear depends on what features you have enabled and if you're in a git repo.
+- LushNvim uses which-key so pressing `<leader>` (space) shows all available actions.
+  - `?` will bring up buffer local keybindings in special windows (e.g. Neo-tree).
+- `<C-\>` (Ctrl+backslash) toggles a floating terminal.
+- Neo-tree file explorer: `<leader>nl` (left), `<leader>nr` (right), `<leader>nf` (float).
+- Bufferline: `[b`/`]b` for quick buffer navigation, `<leader>b` for more options.
+- Sessions: `<leader>ss` to save, `<leader>sl` to load, `l` on the dashboard for last session.
+- LSP: autocompletion works out of the box, `<leader>c` for code actions, `<leader>xx` for diagnostics.
+- Lazy package manager: `:Lazy` to manage plugins. Extra plugins added via `M.plugins` in user config.
+- Mason: `:Mason` to manage LSP servers, formatters, and debuggers.
+- CWD management: automatically changes to project root (via project.nvim) when inside a project, falls back to file directory otherwise. Special buffers (terminals, floating windows) never affect CWD.
+
+
+## Project Structure
+
+```
+lua/
+  config/           Core configuration (do not modify for personal settings)
+    autocommands.lua    Autocommand definitions
+    keybindings.lua     Global keybindings
+    languages.lua       Language bundle definitions
+    lazy.lua            Plugin specifications
+    lsp.lua             LSP and completion setup
+    options.lua         Default Neovim options
+    usercommands.lua    Built-in user commands (:LushInfo, :LushUpdate, etc.)
+    utils.lua           Utility functions
+  user/             Your personal configuration
+    config.lua          Main user config (copy from example_user_config.lua)
+    usercommands.lua    Custom user commands
+    plugin-configs/     Custom plugin configurations
+  lush/
+    health.lua          Health check module (:checkhealth lush)
+after/plugin/       Plugin-specific configuration (one file per plugin/feature)
+init.lua            Entry point
+```
 
 
 ## Copyright

@@ -49,12 +49,20 @@ if utils.enabled(group, "alpha") then
     table.insert(buttons, dashboard.button("p", "  Open project", ":lua telescope_open_project()<CR>"))
   end
 
+  table.insert(buttons, dashboard.button("h", "󰋽  Health check", ":checkhealth lush<CR>"))
   table.insert(buttons, dashboard.button("q", "󰩈  Quit", ":qall<CR>"))
 
   dashboard.section.buttons.val = buttons
 
   local fortune = require("alpha.fortune")
-  dashboard.section.footer.val = fortune()
+  local footer_lines = fortune()
+  table.insert(footer_lines, "")
+  table.insert(footer_lines, "Config: lua/user/config.lua")
+  table.insert(footer_lines, "")
+  table.insert(footer_lines, "Leader: SPC  a=AI b=Buf c=Code d=Debug f=Find g=Git")
+  table.insert(footer_lines, "        n=Explorer q=Quit s=Session t=Tab u=UI w=Win x=Diag")
+
+  dashboard.section.footer.val = footer_lines
 
   require("alpha").setup(dashboard.opts)
 end

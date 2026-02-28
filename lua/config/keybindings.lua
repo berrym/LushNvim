@@ -243,8 +243,11 @@ map("x", "<A-k>", ":m '<-2<CR>gv=gv", { desc = "Move selection up" })
 -- [7] Misc Mappings
 -- ══════════════════════════════════════════════════════════════════════════════
 
--- Clear search highlighting
-map("n", "<Esc>", "<CMD>nohlsearch<CR>", { desc = "Clear search highlighting" })
+-- Clear search highlighting and dismiss notifications
+map("n", "<Esc>", function()
+  vim.cmd.nohlsearch()
+  pcall(function() require("notify").dismiss({ silent = true }) end)
+end, { desc = "Clear highlights / dismiss notifications" })
 
 -- Alpha dashboard
 if enabled(group, "alpha") then
@@ -271,9 +274,8 @@ if enabled(group, "whichkey") then
   map("n", "<leader>?", function() require("which-key").show({ global = false }) end, { desc = "Show keymaps" })
 end
 
--- Notify dismiss (ESC in normal/insert)
+-- Notify dismiss (ESC in insert mode)
 if enabled(group, "notify") then
-  map("n", "<ESC>", "<CMD>lua require('notify').dismiss()<CR>", { desc = "Dismiss notifications" })
   map("i", "<ESC>", "<CMD>lua require('notify').dismiss()<CR><ESC>")
 end
 

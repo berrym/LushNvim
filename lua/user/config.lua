@@ -4,6 +4,11 @@ local utils = require("config.utils")
 
 local M = {}
 
+-- OPTIONAL: language bundles (auto-populate mason, treesitter, lsp, formatting)
+-- Supported: "c", "python", "go", "rust", "lua", "web", "bash", "toml", "yaml"
+-- You can still override individual tables below -- bundles just provide defaults.
+-- M.languages = { "c", "python", "go", "rust", "lua", "web", "bash", "toml", "yaml" }
+
 -- options put here will override or add on to the default options
 M.options = {
   opt = {
@@ -116,14 +121,12 @@ M.mason_ensure_installed = {
     "checkmake",
     "mesonlsp",
     "shfmt",
-    "ruby-lsp",
-    "solargraph",
     -- "swiftlint",
   },
   dap = {
-    "python",    -- debugpy for Python
-    "delve",     -- delve for Go
-    "codelldb",  -- codelldb for C/C++/Rust
+    "python", -- debugpy for Python
+    "delve", -- delve for Go
+    "codelldb", -- codelldb for C/C++/Rust
   },
 }
 
@@ -458,11 +461,6 @@ M.lsp_configs = {
     cmd = { "taplo", "lsp", "stdio" },
     filetypes = { "toml" },
   },
-  ruby_lsp = {
-    cmd = { "ruby-lsp" },
-    filetypes = { "ruby", "eruby" },
-    init_options = { "auto" },
-  },
 }
 
 -- add extra configuration options here, like extra autocmds etc.
@@ -493,6 +491,85 @@ M.custom_conf = function()
   -- utils.colors("monokai-pro-octagon")
 
   require("user.usercommands")
+end
+
+-- Language bundle expansion (only runs if M.languages is set)
+-- Merges bundle defaults into tables above; manual entries always win.
+if M.languages and #M.languages > 0 then
+  local ok_lang, lang_mod = pcall(require, "config.languages")
+  if ok_lang then
+    local expanded = lang_mod.expand(M.languages)
+
+    -- mason_ensure_installed.null_ls
+    M.mason_ensure_installed = M.mason_ensure_installed or {}
+    local existing_null_ls = M.mason_ensure_installed.null_ls or {}
+    local null_ls_set = {}
+    for _, v in ipairs(existing_null_ls) do
+      null_ls_set[v] = true
+    end
+    for _, v in ipairs(expanded.mason_null_ls) do
+      if not null_ls_set[v] then
+        table.insert(existing_null_ls, v)
+      end
+    end
+    M.mason_ensure_installed.null_ls = existing_null_ls
+
+    -- mason_ensure_installed.dap
+    local existing_dap = M.mason_ensure_installed.dap or {}
+    local dap_set = {}
+    for _, v in ipairs(existing_dap) do
+      dap_set[v] = true
+    end
+    for _, v in ipairs(expanded.mason_dap) do
+      if not dap_set[v] then
+        table.insert(existing_dap, v)
+      end
+    end
+    M.mason_ensure_installed.dap = existing_dap
+
+    -- treesitter_ensure_installed
+    local existing_ts = M.treesitter_ensure_installed or {}
+    local ts_set = {}
+    for _, v in ipairs(existing_ts) do
+      ts_set[v] = true
+    end
+    for _, v in ipairs(expanded.treesitter) do
+      if not ts_set[v] then
+        table.insert(existing_ts, v)
+      end
+    end
+    M.treesitter_ensure_installed = existing_ts
+
+    -- formatting_servers.null_ls
+    M.formatting_servers = M.formatting_servers or {}
+    local existing_fmt = M.formatting_servers["null_ls"] or {}
+    local fmt_set = {}
+    for _, v in ipairs(existing_fmt) do
+      fmt_set[v] = true
+    end
+    for _, v in ipairs(expanded.formatting_servers) do
+      if not fmt_set[v] then
+        table.insert(existing_fmt, v)
+      end
+    end
+    M.formatting_servers["null_ls"] = existing_fmt
+
+    -- lsp_configs (existing configs win)
+    M.lsp_configs = M.lsp_configs or {}
+    for server, config in pairs(expanded.lsp_configs) do
+      if not M.lsp_configs[server] then
+        M.lsp_configs[server] = config
+      end
+    end
+
+    -- enable_plugins (existing flags win)
+    M.enable_plugins = M.enable_plugins or {}
+    for key, val in pairs(expanded.enable_plugins) do
+      if M.enable_plugins[key] == nil then
+        M.enable_plugins[key] = val
+      end
+    end
+  end
 end
 
 return M

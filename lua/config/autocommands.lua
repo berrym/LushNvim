@@ -5,6 +5,14 @@ local user_config = utils.get_user_config()
 local group = user_config.autocommands or {}
 local plugin = user_config.enable_plugins or {}
 
+-- Clear stale search highlights on startup (from shada/session restore)
+autocmd("VimEnter", {
+  group = augroup("clear_hlsearch", { clear = true }),
+  callback = function()
+    vim.cmd.nohlsearch()
+  end,
+})
+
 -- disables code folding for the start screen
 if utils.enabled(group, "alpha_folding") then
   autocmd("FileType", {
