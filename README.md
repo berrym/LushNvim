@@ -56,7 +56,7 @@ M.languages = { "c", "python", "go", "rust", "lua", "web", "bash", "toml", "yaml
 
 Each bundle auto-populates `mason_ensure_installed`, `lsp_configs`, `treesitter_ensure_installed`, and `formatting_servers` with sensible defaults. You can still override any individual table — manual entries always take precedence over bundle defaults.
 
-Available bundles: `c` (includes cmake + meson), `python`, `go`, `rust`, `lua`, `web` (JS/TS/HTML/CSS/JSON), `bash`, `toml`, `yaml`
+Available bundles: `c` (includes cmake + meson), `python`, `go`, `rust`, `lua`, `web` (JS/TS/HTML/CSS/JSON), `bash`, `toml`, `yaml`, `ruby`, `zig`, `docker`, `perl`, `java`
 
 ### Manual Configuration
 
@@ -79,6 +79,9 @@ Both approaches can be combined — use bundles for the base and override specif
 
 - Run `nvim` and let LushNvim download and configure its requirements.
 - This process can take several minutes on first launch.
+- On first run, if no user config exists, LushNvim will show a welcome message.
+  - Run `:LushInit` to automatically create your config from the example template.
+  - Or manually: `cp lua/example_user_config.lua lua/user/config.lua`
 - After the initial setup, close and reopen nvim.
 - Run `:checkhealth lush` to verify everything is installed correctly.
 
@@ -92,6 +95,7 @@ LushNvim includes built-in diagnostic commands:
 | `:checkhealth lush` | Check nvim version, external tools, mason packages, LSP servers, treesitter parsers |
 | `:LushInfo` | Show current buffer's LSP clients, formatters, linters, DAP adapter, treesitter status |
 | `:LushUpdate` | Update plugins, mason packages, and treesitter parsers |
+| `:LushInit` | Create user config from example template (first-run) |
 | `:LushReload` | Hot-reload config (options, keybindings, autocommands) |
 
 

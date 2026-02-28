@@ -9,7 +9,8 @@ local M = {}
 
 -- Language bundles: the easiest way to set up language support.
 -- Each bundle auto-configures LSP, formatters, DAP, treesitter, and mason packages.
--- Supported: "c", "python", "go", "rust", "lua", "web", "bash", "toml", "yaml"
+-- Supported: "c", "python", "go", "rust", "lua", "web", "bash", "toml", "yaml",
+--            "ruby", "zig", "docker", "perl", "java"
 -- Just list the languages you need -- bundles provide sensible defaults.
 -- You can still override any individual table below (manual entries always win).
 M.languages = { "c", "python", "go", "rust", "lua", "web", "bash", "toml", "yaml" }
@@ -423,59 +424,6 @@ end
 
 -- Language bundle expansion (only runs if M.languages is set)
 -- Merges bundle defaults into tables above; manual entries always win.
-if M.languages and #M.languages > 0 then
-  local ok_lang, lang_mod = pcall(require, "config.languages")
-  if ok_lang then
-    local expanded = lang_mod.expand(M.languages)
-
-    M.mason_ensure_installed = M.mason_ensure_installed or {}
-    local existing_null_ls = M.mason_ensure_installed.null_ls or {}
-    local null_ls_set = {}
-    for _, v in ipairs(existing_null_ls) do null_ls_set[v] = true end
-    for _, v in ipairs(expanded.mason_null_ls) do
-      if not null_ls_set[v] then table.insert(existing_null_ls, v) end
-    end
-    M.mason_ensure_installed.null_ls = existing_null_ls
-
-    local existing_dap = M.mason_ensure_installed.dap or {}
-    local dap_set = {}
-    for _, v in ipairs(existing_dap) do dap_set[v] = true end
-    for _, v in ipairs(expanded.mason_dap) do
-      if not dap_set[v] then table.insert(existing_dap, v) end
-    end
-    M.mason_ensure_installed.dap = existing_dap
-
-    local existing_ts = M.treesitter_ensure_installed or {}
-    local ts_set = {}
-    for _, v in ipairs(existing_ts) do ts_set[v] = true end
-    for _, v in ipairs(expanded.treesitter) do
-      if not ts_set[v] then table.insert(existing_ts, v) end
-    end
-    M.treesitter_ensure_installed = existing_ts
-
-    M.formatting_servers = M.formatting_servers or {}
-    local existing_fmt = M.formatting_servers["null_ls"] or {}
-    local fmt_set = {}
-    for _, v in ipairs(existing_fmt) do fmt_set[v] = true end
-    for _, v in ipairs(expanded.formatting_servers) do
-      if not fmt_set[v] then table.insert(existing_fmt, v) end
-    end
-    M.formatting_servers["null_ls"] = existing_fmt
-
-    M.lsp_configs = M.lsp_configs or {}
-    for server, config in pairs(expanded.lsp_configs) do
-      if not M.lsp_configs[server] then
-        M.lsp_configs[server] = config
-      end
-    end
-
-    M.enable_plugins = M.enable_plugins or {}
-    for key, val in pairs(expanded.enable_plugins) do
-      if M.enable_plugins[key] == nil then
-        M.enable_plugins[key] = val
-      end
-    end
-  end
-end
+pcall(function() require("config.languages").apply(M) end)
 
 return M

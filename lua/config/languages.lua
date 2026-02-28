@@ -224,6 +224,62 @@ M.bundles = {
 		lsp_configs = {},
 		enable_plugins = {},
 	},
+	ruby = {
+		mason_null_ls = { "ruby-lsp", "solargraph" },
+		mason_dap = {},
+		treesitter = { "ruby" },
+		formatting_servers = { "ruby" },
+		lsp_configs = {
+			ruby_lsp = {
+				cmd = { "ruby-lsp" },
+				filetypes = { "ruby", "eruby" },
+				init_options = { "auto" },
+			},
+		},
+		enable_plugins = {},
+	},
+	zig = {
+		mason_null_ls = { "zls" },
+		mason_dap = {},
+		treesitter = { "zig" },
+		formatting_servers = { "zig" },
+		lsp_configs = {
+			zls = {
+				cmd = { "zls" },
+				filetypes = { "zig" },
+			},
+		},
+		enable_plugins = {},
+	},
+	docker = {
+		mason_null_ls = { "dockerfile-language-server", "docker-compose-language-service" },
+		mason_dap = {},
+		treesitter = { "dockerfile" },
+		formatting_servers = {},
+		lsp_configs = {},
+		enable_plugins = {},
+	},
+	perl = {
+		mason_null_ls = { "perlnavigator" },
+		mason_dap = {},
+		treesitter = { "perl" },
+		formatting_servers = {},
+		lsp_configs = {
+			perlnavigator = {
+				cmd = { "perlnavigator" },
+				filetypes = { "perl" },
+			},
+		},
+		enable_plugins = {},
+	},
+	java = {
+		mason_null_ls = { "jdtls", "google-java-format" },
+		mason_dap = { "java-debug-adapter" },
+		treesitter = { "java" },
+		formatting_servers = { "java" },
+		lsp_configs = {},
+		enable_plugins = {},
+	},
 }
 
 --- Expand a list of language names into config tables.
@@ -287,6 +343,55 @@ M.expand = function(languages)
 	end
 
 	return result
+end
+
+--- Helper: append values from src list into dst list, skipping duplicates.
+local function merge_list(dst, src)
+	local seen = {}
+	for _, v in ipairs(dst) do seen[v] = true end
+	for _, v in ipairs(src) do
+		if not seen[v] then
+			table.insert(dst, v)
+			seen[v] = true
+		end
+	end
+end
+
+--- Apply language bundle defaults to a user config table.
+--- Manual entries in the config always win (append-if-missing / set-if-nil).
+--- @param config table the user config module (M)
+M.apply = function(config)
+	if not config.languages or #config.languages == 0 then return end
+
+	local expanded = M.expand(config.languages)
+
+	config.mason_ensure_installed = config.mason_ensure_installed or {}
+	config.mason_ensure_installed.null_ls = config.mason_ensure_installed.null_ls or {}
+	merge_list(config.mason_ensure_installed.null_ls, expanded.mason_null_ls)
+
+	config.mason_ensure_installed.dap = config.mason_ensure_installed.dap or {}
+	merge_list(config.mason_ensure_installed.dap, expanded.mason_dap)
+
+	config.treesitter_ensure_installed = config.treesitter_ensure_installed or {}
+	merge_list(config.treesitter_ensure_installed, expanded.treesitter)
+
+	config.formatting_servers = config.formatting_servers or {}
+	config.formatting_servers["null_ls"] = config.formatting_servers["null_ls"] or {}
+	merge_list(config.formatting_servers["null_ls"], expanded.formatting_servers)
+
+	config.lsp_configs = config.lsp_configs or {}
+	for server, conf in pairs(expanded.lsp_configs) do
+		if not config.lsp_configs[server] then
+			config.lsp_configs[server] = conf
+		end
+	end
+
+	config.enable_plugins = config.enable_plugins or {}
+	for key, val in pairs(expanded.enable_plugins) do
+		if config.enable_plugins[key] == nil then
+			config.enable_plugins[key] = val
+		end
+	end
 end
 
 return M
