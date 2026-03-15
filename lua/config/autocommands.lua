@@ -112,7 +112,7 @@ local indent_config = {
 
 autocmd("FileType", {
   group = augroup("setIndent", { clear = true }),
-  pattern = vim.tbl_flatten(vim.tbl_values(indent_config)),
+  pattern = vim.iter(vim.tbl_values(indent_config)):flatten():totable(),
   callback = function()
     local ft = vim.bo.filetype
     for width, filetypes in pairs(indent_config) do
@@ -198,5 +198,251 @@ autocmd("BufWinEnter", {
       dir = vim.fn.expand("%:p:h")
     end
     vim.cmd.cd(vim.fn.fnameescape(dir))
+  end,
+})
+
+-- ══════════════════════════════════════════════════════════════════════════════
+-- Layout Guardian: prevent sidebar-only layouts when last editor window closes
+-- ══════════════════════════════════════════════════════════════════════════════
+
+local sidebar_filetypes = {
+  ["neo-tree"] = true,
+  ["Trouble"] = true,
+  ["qf"] = true,
+  ["help"] = true,
+  ["toggleterm"] = true,
+  ["dapui_scopes"] = true,
+  ["dapui_breakpoints"] = true,
+  ["dapui_stacks"] = true,
+  ["dapui_watches"] = true,
+  ["dapui_console"] = true,
+  ["dap-repl"] = true,
+}
+
+local function is_sidebar_win(win)
+  if not vim.api.nvim_win_is_valid(win) then return true end
+  local cfg = vim.api.nvim_win_get_config(win)
+  if cfg.relative and cfg.relative ~= "" then return true end
+  local buf = vim.api.nvim_win_get_buf(win)
+  local bt = vim.bo[buf].buftype
+  local ft = vim.bo[buf].filetype
+  return bt == "terminal" or sidebar_filetypes[ft] or false
+end
+
+autocmd("WinClosed", {
+  group = augroup("layout_guardian", { clear = true }),
+  callback = function()
+    vim.schedule(function()
+      local wins = vim.api.nvim_tabpage_list_wins(0)
+      local real_wins = 0
+      local first_sidebar = nil
+      for _, win in ipairs(wins) do
+        if not is_sidebar_win(win) then
+          real_wins = real_wins + 1
+        elseif not first_sidebar then
+          first_sidebar = win
+        end
+      end
+      if real_wins == 0 and #wins > 0 then
+        -- Find a non-floating window to put the scratch buffer in
+        for _, win in ipairs(wins) do
+          local cfg = vim.api.nvim_win_get_config(win)
+          if not cfg.relative or cfg.relative == "" then
+            local ft = vim.bo[vim.api.nvim_win_get_buf(win)].filetype
+            if ft ~= "neo-tree" then
+              vim.api.nvim_set_current_win(win)
+              vim.cmd("enew")
+              return
+            end
+          end
+        end
+        -- Fallback: use any non-floating window
+        if first_sidebar then
+          vim.api.nvim_set_current_win(first_sidebar)
+          vim.cmd("enew")
+        end
+      end
+    end)
+  end,
+})
+
+-- ══════════════════════════════════════════════════════════════════════════════
+-- Diff Mode Layout Management + Claude Diff Cleanup
+-- ══════════════════════════════════════════════════════════════════════════════
+
+local _pre_diff_state = nil   -- saved {win, buf} pairs before diff
+local _neotree_was_open = false
+local _in_diff_mode = false
+
+-- Check if neo-tree has a visible window in the current tab
+local function neotree_is_visible()
+  local ok, manager = pcall(require, "neo-tree.sources.manager")
+  if not ok then return false end
+  local ok2, state = pcall(manager.get_state, "filesystem")
+  if not ok2 or not state then return false end
+  return state.winid and vim.api.nvim_win_is_valid(state.winid)
+end
+
+-- Check if any window in the current tab has diff mode active
+local function any_diff_windows()
+  for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+    if vim.api.nvim_win_is_valid(win) and vim.wo[win].diff then
+      return true
+    end
+  end
+  return false
+end
+
+-- Check if a buffer is a Claude diff buffer
+local function is_claude_diff_buf(buf)
+  if not vim.api.nvim_buf_is_valid(buf) then return false end
+  local ok, val = pcall(vim.api.nvim_buf_get_var, buf, "claudecode_diff_tab_name")
+  return ok and val ~= nil
+end
+
+-- Clean up stale Claude diff buffers and restore layout
+local function diff_cleanup()
+  if not _in_diff_mode then return end
+  if any_diff_windows() then return end
+
+  -- No diff windows remain — clean up
+  _in_diff_mode = false
+
+  -- Delete stale Claude diff buffers
+  for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+    if is_claude_diff_buf(buf) and vim.api.nvim_buf_is_loaded(buf) then
+      pcall(vim.api.nvim_buf_delete, buf, { force = true })
+    end
+  end
+
+  -- Turn off diff mode on any remaining windows
+  for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+    if vim.api.nvim_win_is_valid(win) and vim.wo[win].diff then
+      vim.api.nvim_win_call(win, function() vim.cmd("diffoff") end)
+    end
+  end
+
+  -- Restore previous layout
+  if _pre_diff_state and #_pre_diff_state > 0 then
+    -- Close all non-terminal, non-sidebar windows first
+    local wins = vim.api.nvim_tabpage_list_wins(0)
+    for _, win in ipairs(wins) do
+      if vim.api.nvim_win_is_valid(win) and not is_sidebar_win(win) then
+        local buf = vim.api.nvim_win_get_buf(win)
+        -- Keep window if its buffer was in our saved state
+        local dominated = true
+        for _, saved in ipairs(_pre_diff_state) do
+          if saved.buf == buf then
+            dominated = false
+            break
+          end
+        end
+        if dominated then
+          pcall(vim.api.nvim_win_close, win, true)
+        end
+      end
+    end
+
+    -- Ensure at least one window has a saved buffer
+    local current_wins = vim.api.nvim_tabpage_list_wins(0)
+    local has_real = false
+    for _, win in ipairs(current_wins) do
+      if not is_sidebar_win(win) then
+        has_real = true
+        break
+      end
+    end
+
+    if not has_real then
+      -- Open the first saved buffer
+      for _, win in ipairs(current_wins) do
+        local cfg = vim.api.nvim_win_get_config(win)
+        if (not cfg.relative or cfg.relative == "") then
+          vim.api.nvim_set_current_win(win)
+          break
+        end
+      end
+      if _pre_diff_state[1] and vim.api.nvim_buf_is_valid(_pre_diff_state[1].buf) then
+        vim.api.nvim_set_current_buf(_pre_diff_state[1].buf)
+      else
+        vim.cmd("enew")
+      end
+    end
+
+    -- Open additional saved buffers in splits if there were multiple
+    for i = 2, #_pre_diff_state do
+      local saved = _pre_diff_state[i]
+      if vim.api.nvim_buf_is_valid(saved.buf) then
+        vim.cmd("vsplit")
+        vim.api.nvim_set_current_buf(saved.buf)
+      end
+    end
+  end
+
+  -- Restore neo-tree if it was open
+  if _neotree_was_open then
+    _neotree_was_open = false
+    pcall(vim.cmd, "Neotree show left")
+  end
+
+  _pre_diff_state = nil
+end
+
+-- Entering diff mode: save state and maximize diff space
+autocmd("OptionSet", {
+  group = augroup("diff_layout", { clear = true }),
+  pattern = "diff",
+  callback = function()
+    if _in_diff_mode then return end
+    -- Only trigger when diff is being turned ON
+    if not vim.v.option_new or vim.v.option_new == false or vim.v.option_new == "0" then return end
+
+    _in_diff_mode = true
+
+    -- Save current layout (non-sidebar, non-diff windows and their buffers)
+    _pre_diff_state = {}
+    for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+      if vim.api.nvim_win_is_valid(win) and not is_sidebar_win(win) then
+        local buf = vim.api.nvim_win_get_buf(win)
+        if not vim.wo[win].diff then
+          table.insert(_pre_diff_state, { win = win, buf = buf })
+        end
+      end
+    end
+
+    -- Close neo-tree to give diff maximum space
+    if neotree_is_visible() then
+      _neotree_was_open = true
+      pcall(vim.cmd, "Neotree close")
+    end
+
+    -- Close non-diff, non-terminal editor windows to give diffs full space
+    vim.schedule(function()
+      for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+        if vim.api.nvim_win_is_valid(win)
+            and not is_sidebar_win(win)
+            and not vim.wo[win].diff then
+          pcall(vim.api.nvim_win_close, win, false)
+        end
+      end
+    end)
+  end,
+})
+
+-- Exiting diff mode: clean up and restore
+autocmd("WinClosed", {
+  group = augroup("diff_cleanup_winclosed", { clear = true }),
+  callback = function()
+    if not _in_diff_mode then return end
+    vim.schedule(diff_cleanup)
+  end,
+})
+
+-- Safety net: catch cases where WinClosed doesn't fire (async plugin cleanup)
+autocmd("BufEnter", {
+  group = augroup("diff_cleanup_bufenter", { clear = true }),
+  callback = function()
+    if not _in_diff_mode then return end
+    vim.schedule(diff_cleanup)
   end,
 })

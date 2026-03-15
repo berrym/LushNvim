@@ -223,6 +223,34 @@ map("n", "<leader>w-", "<CMD>resize -5<CR>", { desc = "Decrease height" })
 map("n", "<leader>w>", "<CMD>vertical resize +5<CR>", { desc = "Increase width" })
 map("n", "<leader>w<", "<CMD>vertical resize -5<CR>", { desc = "Decrease width" })
 
+-- Maximize toggle
+local _maximized = false
+map("n", "<leader>wm", function()
+  if _maximized then
+    vim.cmd("wincmd =")
+    _maximized = false
+  else
+    vim.cmd("wincmd _")
+    vim.cmd("wincmd |")
+    _maximized = true
+  end
+end, { desc = "Toggle maximize window" })
+
+-- Maximize width only (useful for side-by-side diffs on narrow displays)
+map("n", "<leader>wM", "<C-w>|", { desc = "Maximize window width" })
+
+-- Arrow key resizing (intuitive, 2-line increments)
+map("n", "<C-Up>", "<CMD>resize +2<CR>", { desc = "Increase height" })
+map("n", "<C-Down>", "<CMD>resize -2<CR>", { desc = "Decrease height" })
+map("n", "<C-Right>", "<CMD>vertical resize +2<CR>", { desc = "Increase width" })
+map("n", "<C-Left>", "<CMD>vertical resize -2<CR>", { desc = "Decrease width" })
+
+-- Move windows (swap position in layout)
+map("n", "<leader>wH", "<C-w>H", { desc = "Move window far left" })
+map("n", "<leader>wJ", "<C-w>J", { desc = "Move window far bottom" })
+map("n", "<leader>wK", "<C-w>K", { desc = "Move window far top" })
+map("n", "<leader>wL", "<C-w>L", { desc = "Move window far right" })
+
 -- ──────────────────────────────────────────────────────────────────────────────
 -- <leader>x: Diagnostics 󰒡
 -- ──────────────────────────────────────────────────────────────────────────────
@@ -344,37 +372,41 @@ end
 
 if enabled(group, "gitsigns") then
   M.gitsigns = function()
-    local gs = package.loaded.gitsigns
+    return function(bufnr)
+      local gs = require("gitsigns")
+      local function opts(desc)
+        return { buffer = bufnr, desc = desc }
+      end
 
-    -- Hunk navigation (bracket style) [c ]c
-    map("n", "]c", function()
-      if vim.wo.diff then return "]c" end
-      vim.schedule(function() gs.next_hunk() end)
-      return "<Ignore>"
-    end, { expr = true, desc = "Next git hunk" })
+      -- Hunk navigation (bracket style) [c ]c
+      map("n", "]c", function()
+        if vim.wo.diff then return "]c" end
+        vim.schedule(function() gs.nav_hunk("next") end)
+        return "<Ignore>"
+      end, { buffer = bufnr, expr = true, desc = "Next git hunk" })
 
-    map("n", "[c", function()
-      if vim.wo.diff then return "[c" end
-      vim.schedule(function() gs.prev_hunk() end)
-      return "<Ignore>"
-    end, { expr = true, desc = "Previous git hunk" })
+      map("n", "[c", function()
+        if vim.wo.diff then return "[c" end
+        vim.schedule(function() gs.nav_hunk("prev") end)
+        return "<Ignore>"
+      end, { buffer = bufnr, expr = true, desc = "Previous git hunk" })
 
-    -- Git operations under <leader>g
-    map("n", "<leader>gs", gs.stage_hunk, { desc = "Stage hunk" })
-    map("n", "<leader>gr", gs.reset_hunk, { desc = "Reset hunk" })
-    map("n", "<leader>gS", gs.stage_buffer, { desc = "Stage buffer" })
-    map("n", "<leader>gu", gs.undo_stage_hunk, { desc = "Undo stage hunk" })
-    map("n", "<leader>gR", gs.reset_buffer, { desc = "Reset buffer" })
-    map("n", "<leader>gp", gs.preview_hunk, { desc = "Preview hunk" })
-    map("n", "<leader>gb", function() gs.blame_line({ full = true }) end, { desc = "Blame line (full)" })
-    map("n", "<leader>gd", gs.diffthis, { desc = "Diff this" })
-    map("n", "<leader>gD", function() gs.diffthis("~") end, { desc = "Diff root" })
-    map("n", "<leader>gT", gs.toggle_deleted, { desc = "Toggle deleted" })
-    map("n", "<leader>gL", gs.toggle_current_line_blame, { desc = "Toggle line blame" })
+      -- Git operations under <leader>g
+      map("n", "<leader>gs", gs.stage_hunk, opts("Stage hunk"))
+      map("n", "<leader>gr", gs.reset_hunk, opts("Reset hunk"))
+      map("n", "<leader>gS", gs.stage_buffer, opts("Stage buffer"))
+      map("n", "<leader>gR", gs.reset_buffer, opts("Reset buffer"))
+      map("n", "<leader>gp", gs.preview_hunk, opts("Preview hunk"))
+      map("n", "<leader>gb", function() gs.blame_line({ full = true }) end, opts("Blame line (full)"))
+      map("n", "<leader>gd", gs.diffthis, opts("Diff this"))
+      map("n", "<leader>gD", function() gs.diffthis("~") end, opts("Diff root"))
+      map("n", "<leader>gT", gs.preview_hunk_inline, opts("Preview hunk inline"))
+      map("n", "<leader>gL", gs.toggle_current_line_blame, opts("Toggle line blame"))
 
-    -- Visual mode stage/reset
-    map("v", "<leader>gs", function() gs.stage_hunk({ vim.fn.line("."), vim.fn.line("v") }) end, { desc = "Stage hunk" })
-    map("v", "<leader>gr", function() gs.reset_hunk({ vim.fn.line("."), vim.fn.line("v") }) end, { desc = "Reset hunk" })
+      -- Visual mode stage/reset
+      map("v", "<leader>gs", function() gs.stage_hunk({ vim.fn.line("."), vim.fn.line("v") }) end, opts("Stage hunk"))
+      map("v", "<leader>gr", function() gs.reset_hunk({ vim.fn.line("."), vim.fn.line("v") }) end, opts("Reset hunk"))
+    end
   end
 end
 
