@@ -5,14 +5,14 @@ create_user_command("CatppuccinTransparencyOn", function()
   require("catppuccin").setup({
     transparent_background = true,
   })
-  colors("catppuccin")
+  colors("catppuccin-nvim")
 end, { desc = "Enable catppuccin transparency" })
 
 create_user_command("CatppuccinTransparencyOff", function()
   require("catppuccin").setup({
     transparent_background = false,
   })
-  colors("catppuccin")
+  colors("catppuccin-nvim")
 end, { desc = "Disable catppuccin transparency" })
 
 create_user_command("NightfoxTransparencyOn", function()

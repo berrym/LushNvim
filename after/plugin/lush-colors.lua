@@ -7,6 +7,7 @@ if utils.enabled(group, "telescope") then
 		{ name = "tokyonight-night",      family = "tokyonight", module = "tokyonight",  transparent_key = "transparent" },
 		{ name = "tokyonight-storm",      family = "tokyonight", module = "tokyonight",  transparent_key = "transparent" },
 		{ name = "tokyonight-day",        family = "tokyonight", module = "tokyonight",  transparent_key = "transparent" },
+		{ name = "catppuccin-nvim",       family = "catppuccin",  module = "catppuccin",  transparent_key = "transparent_background" },
 		{ name = "catppuccin-mocha",      family = "catppuccin",  module = "catppuccin",  transparent_key = "transparent_background" },
 		{ name = "catppuccin-frappe",     family = "catppuccin",  module = "catppuccin",  transparent_key = "transparent_background" },
 		{ name = "catppuccin-macchiato",  family = "catppuccin",  module = "catppuccin",  transparent_key = "transparent_background" },

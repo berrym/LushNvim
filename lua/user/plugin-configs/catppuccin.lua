@@ -35,8 +35,8 @@ require("catppuccin").setup({
   integrations = {
     aerial = true,
     alpha = true,
+    blink_cmp = true,
     lsp_trouble = true,
-    cmp = true,
     gitsigns = true,
     bufferline = true,
     indent_blankline = {
@@ -46,8 +46,8 @@ require("catppuccin").setup({
     },
     neotree = true,
     noice = true,
+    snacks = true,
     telescope = true,
-    treesitter = true,
     mason = true,
     which_key = true,
     notify = true,

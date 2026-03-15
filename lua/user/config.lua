@@ -481,7 +481,7 @@ M.custom_conf = function()
   utils.notify_info("Here be dragons! Fear is the mind killer.", "<== lususnaturae ==>")
 
   -- set color scheme
-  -- utils.colors("catppuccin")
+  -- utils.colors("catppuccin-nvim")
   utils.colors("tokyonight-night")
   -- utils.colors("nightfox")
   -- utils.colors("duskfox")
