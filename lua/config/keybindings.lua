@@ -166,10 +166,23 @@ map("n", "<leader>qa", "<CMD>wqa<CR>", { desc = "Save all and quit" })
 -- <leader>s: Session 󱂬
 -- ──────────────────────────────────────────────────────────────────────────────
 if enabled(group, "session_manager") then
-  map("n", "<leader>ss", "<CMD>SessionManager save_current_session<CR>", { desc = "Save session" })
-  map("n", "<leader>sl", function() telescope_session_pick() end, { desc = "Load session" })
-  map("n", "<leader>so", "<CMD>SessionManager load_last_session<CR>", { desc = "Open last session" })
-  map("n", "<leader>sd", function() telescope_session_pick() end, { desc = "Delete session" })
+  map("n", "<leader>ss", function() require("persisted").save() end, { desc = "Save session" })
+  map("n", "<leader>sl", "<CMD>Telescope persisted<CR>", { desc = "Load session" })
+  map("n", "<leader>so", function() require("persisted").load({ last = true }) end, { desc = "Open last session" })
+  map("n", "<leader>sd", "<CMD>Telescope persisted<CR>", { desc = "Delete session (<C-d>)" })
+  map("n", "<leader>sn", function()
+    -- Fresh workspace: close everything, stay in current project CWD
+    local cwd = vim.fn.getcwd()
+    require("persisted").stop() -- stop recording so this clean state doesn't overwrite the saved session
+    vim.cmd("%bdelete!")
+    vim.cmd("enew")
+    vim.cmd("cd " .. vim.fn.fnameescape(cwd))
+    local ok_utils, u = pcall(require, "config.utils")
+    if ok_utils and u.enabled(u.get_plugin_group(), "neotree") then
+      vim.cmd("Neotree toggle left")
+    end
+    u.notify_info(vim.fn.fnamemodify(cwd, ":t") .. " (fresh)", "Session")
+  end, { desc = "Fresh workspace (keep project)" })
 end
 
 -- ──────────────────────────────────────────────────────────────────────────────

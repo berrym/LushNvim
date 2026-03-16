@@ -108,9 +108,9 @@ local plugins = {
     },
   },
   {
-    "Shatur/neovim-session-manager",
+    "olimorris/persisted.nvim",
     cond = enabled(group, "session_manager"),
-    event = "VimEnter",
+    lazy = false,
   },
   {
     "folke/noice.nvim",
@@ -639,7 +639,7 @@ local plugins = {
   },
   { "nvim-lua/plenary.nvim" },
   {
-    "ahmedkhalf/project.nvim",
+    "DrKJeff16/project.nvim",
     cond = enabled(group, "project"),
     event = "VimEnter",
   },

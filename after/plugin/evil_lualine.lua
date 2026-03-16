@@ -219,6 +219,19 @@ if utils.enabled(group, "lualine") then
   })
 
   ins_right({
+    function()
+      if vim.g.persisting then return "● session" end
+      if vim.g.persisting == false then return "○ no session" end
+      return ""
+    end,
+    cond = function() return vim.g.persisting ~= nil end,
+    color = function()
+      if vim.g.persisting then return { fg = colors.green } end
+      return { fg = colors.yellow }
+    end,
+  })
+
+  ins_right({
     "branch",
     icon = "",
     color = { fg = colors.violet, gui = "bold" },

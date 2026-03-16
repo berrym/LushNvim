@@ -37,11 +37,11 @@ if utils.enabled(group, "alpha") then
   if utils.enabled(group, "session_manager") then
     table.insert(
       buttons,
-      dashboard.button("l", "󱀸  Open last session", ":SessionManager load_last_session<CR>")
+      dashboard.button("l", "󱀸  Resume last session", ":lua require('persisted').load({ last = true })<CR>")
     )
     table.insert(
       buttons,
-      dashboard.button("o", "  Open session", ":SessionManager load_session<CR>")
+      dashboard.button("o", "  Browse sessions", ":Telescope persisted<CR>")
     )
   end
 

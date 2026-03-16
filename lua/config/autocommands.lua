@@ -133,33 +133,44 @@ local function count_real_wins()
   return n
 end
 
+local _ensuring_editor = false
 local function ensure_editor_window()
+  if _ensuring_editor then return end
   if count_real_wins() > 0 then return end
+  _ensuring_editor = true
   local wins = vim.api.nvim_tabpage_list_wins(0)
-  if #wins == 0 then return end
-  -- Prefer non-neo-tree, non-floating window to show scratch
+  if #wins == 0 then
+    _ensuring_editor = false
+    return
+  end
+  -- Prefer non-floating, non-neo-tree, non-terminal window to show scratch
   for _, win in ipairs(wins) do
     if vim.api.nvim_win_is_valid(win) then
       local cfg = vim.api.nvim_win_get_config(win)
-      if (not cfg.relative or cfg.relative == "")
-          and vim.bo[vim.api.nvim_win_get_buf(win)].filetype ~= "neo-tree" then
-        vim.api.nvim_win_set_buf(win, get_scratch_buf())
-        return
+      if (not cfg.relative or cfg.relative == "") then
+        local buf = vim.api.nvim_win_get_buf(win)
+        if vim.bo[buf].filetype ~= "neo-tree" and vim.bo[buf].buftype ~= "terminal" then
+          vim.api.nvim_win_set_buf(win, get_scratch_buf())
+          _ensuring_editor = false
+          return
+        end
       end
     end
   end
-  -- Fallback: split from first available non-floating window
+  -- Fallback: split from first available non-floating window (creates new window)
   for _, win in ipairs(wins) do
     if vim.api.nvim_win_is_valid(win) then
       local cfg = vim.api.nvim_win_get_config(win)
       if not cfg.relative or cfg.relative == "" then
         vim.api.nvim_set_current_win(win)
-        vim.cmd("vsplit")
+        vim.cmd("botright vsplit")
         vim.api.nvim_win_set_buf(0, get_scratch_buf())
+        _ensuring_editor = false
         return
       end
     end
   end
+  _ensuring_editor = false
 end
 
 -- Trouble: close and show scratch instead of quitting nvim
@@ -260,17 +271,24 @@ autocmd("BufWinEnter", {
       return
     end
 
-    -- Prefer project root (from project.nvim) over raw file directory
+    -- Prefer project root (via vim.fs.root) over raw file directory
     local filepath = vim.fn.expand("%:p")
+    local root = vim.fs.root(0, {
+      ".git",
+      "Makefile", "CMakeLists.txt", "meson.build",
+      "Cargo.toml",
+      "pyproject.toml", "setup.py", "setup.cfg", "Pipfile",
+      "go.mod",
+      "package.json", "tsconfig.json",
+      "pom.xml", "build.gradle", "build.gradle.kts",
+      "Gemfile", "build.zig", "cpanfile", "Makefile.PL",
+      "docker-compose.yml", "docker-compose.yaml",
+      ".editorconfig",
+    })
     local dir
-    local ok, project = pcall(require, "project_nvim.project")
-    if ok then
-      local root = project.get_project_root()
-      if root and filepath:find(root, 1, true) == 1 then
-        dir = root
-      end
-    end
-    if not dir then
+    if root and filepath:find(root, 1, true) == 1 then
+      dir = root
+    else
       dir = vim.fn.expand("%:p:h")
     end
     vim.cmd.cd(vim.fn.fnameescape(dir))
@@ -310,9 +328,17 @@ autocmd("QuitPre", {
 -- ══════════════════════════════════════════════════════════════════════════════
 -- Diff Mode Layout Management + Claude Diff Cleanup
 -- ══════════════════════════════════════════════════════════════════════════════
+--
+-- claudecode.nvim only sets b:claudecode_diff_tab_name on the PROPOSED buffer,
+-- not the original file buffer. After claudecode deletes the proposed buffer,
+-- that marker is gone. So we track diff participant buffers ourselves via
+-- OptionSet and use that list for cleanup instead of relying on the marker.
 
 local _neotree_was_open = false
-local _had_diff_activity = false
+local _in_claude_diff = false
+local _diff_bufs = {}       -- {[buf_id] = true} buffers that entered diff mode during a Claude diff
+local _cleanup_timer = nil  -- debounce timer to prevent event storms
+local _pre_diff_bufs = {}   -- {buf_id, buf_id, ...} editor buffers that were open before diff started
 
 local function neotree_is_visible()
   local ok, manager = pcall(require, "neo-tree.sources.manager")
@@ -337,82 +363,186 @@ local function is_claude_diff_buf(buf)
   return ok and val ~= nil
 end
 
-local function has_claude_diff_bufs()
-  for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-    if is_claude_diff_buf(buf) and vim.api.nvim_buf_is_loaded(buf) then
-      return true
+local function is_empty_unnamed_buf(buf)
+  if not vim.api.nvim_buf_is_valid(buf) then return false end
+  if vim.api.nvim_buf_get_name(buf) ~= "" then return false end
+  if vim.bo[buf].buftype ~= "" then return false end
+  if vim.bo[buf].modified then return false end
+  local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+  return #lines <= 1 and (lines[1] or "") == ""
+end
+
+local function focus_claude_terminal()
+  for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+    if vim.api.nvim_win_is_valid(win) then
+      local buf = vim.api.nvim_win_get_buf(win)
+      if vim.bo[buf].buftype == "terminal" then
+        local name = vim.api.nvim_buf_get_name(buf)
+        if name:lower():match("claude") then
+          pcall(vim.api.nvim_set_current_win, win)
+          return
+        end
+      end
     end
   end
-  return false
 end
 
 local function diff_cleanup()
-  if not _had_diff_activity then return end
+  _cleanup_timer = nil
+  if not _in_claude_diff then return end
   -- Still in an active diff — don't clean up yet
   if any_diff_windows() then return end
-  -- No Claude diff buffers to clean — nothing to do
-  if not has_claude_diff_bufs() then
-    _had_diff_activity = false
-    return
-  end
 
-  _had_diff_activity = false
+  _in_claude_diff = false
+  local participant_bufs = _diff_bufs
+  _diff_bufs = {}
+  local saved_bufs = _pre_diff_bufs
+  _pre_diff_bufs = {}
 
-  -- Delete stale Claude diff buffers
-  for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-    if is_claude_diff_buf(buf) and vim.api.nvim_buf_is_loaded(buf) then
-      pcall(vim.api.nvim_buf_delete, buf, { force = true })
-    end
-  end
-
-  -- Turn off diff mode on any remaining windows
+  -- 1. Turn off diff mode on any remaining windows
   for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
     if vim.api.nvim_win_is_valid(win) and vim.wo[win].diff then
       vim.api.nvim_win_call(win, function() vim.cmd("diffoff") end)
     end
   end
 
-  -- Close windows holding empty unnamed buffers left over from diff teardown
+  -- 2. Collect diff/stale windows to reclaim (NOT terminal/sidebar)
+  local reclaimable = {}
   for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
     if vim.api.nvim_win_is_valid(win) and not is_sidebar_win(win) then
       local buf = vim.api.nvim_win_get_buf(win)
-      if vim.api.nvim_buf_get_name(buf) == ""
-          and vim.bo[buf].buftype == ""
-          and not vim.bo[buf].modified then
-        local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
-        if #lines <= 1 and (lines[1] or "") == "" then
-          -- Only close if there are other real windows remaining
-          if count_real_wins() > 1 then
-            pcall(vim.api.nvim_win_close, win, true)
-          end
+      if vim.bo[buf].buftype ~= "terminal" then
+        if participant_bufs[buf] or is_claude_diff_buf(buf) or is_empty_unnamed_buf(buf) then
+          table.insert(reclaimable, win)
         end
       end
     end
   end
 
-  -- Ensure we have at least one real editor window
+  -- 3. Build restore list: valid, loaded, non-diff pre-diff buffers
+  local restore_bufs = {}
+  for _, buf in ipairs(saved_bufs) do
+    if vim.api.nvim_buf_is_valid(buf) and vim.api.nvim_buf_is_loaded(buf)
+        and not participant_bufs[buf] and not is_claude_diff_buf(buf) then
+      table.insert(restore_bufs, buf)
+    end
+  end
+
+  -- 4. Restore pre-diff buffers into reclaimable windows, close extras
+  local ri = 1
+  for _, win in ipairs(reclaimable) do
+    if vim.api.nvim_win_is_valid(win) then
+      if ri <= #restore_bufs then
+        -- Restore a pre-diff buffer into this window
+        vim.api.nvim_win_set_buf(win, restore_bufs[ri])
+        ri = ri + 1
+      elseif count_real_wins() > 1 then
+        -- No more buffers to restore — close excess diff windows
+        pcall(vim.api.nvim_win_close, win, true)
+      else
+        -- Last real window and nothing to restore — use scratch
+        vim.api.nvim_win_set_buf(win, get_scratch_buf())
+      end
+    end
+  end
+
+  -- 5. Delete diff-participant and Claude diff buffers no longer displayed
+  for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+    if vim.api.nvim_buf_is_valid(buf) and vim.api.nvim_buf_is_loaded(buf) then
+      if participant_bufs[buf] or is_claude_diff_buf(buf) then
+        local displayed = false
+        for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+          if vim.api.nvim_win_is_valid(win) and vim.api.nvim_win_get_buf(win) == buf then
+            displayed = true
+            break
+          end
+        end
+        if not displayed then
+          pcall(vim.api.nvim_buf_delete, buf, { force = true })
+        end
+      end
+    end
+  end
+
+  -- 6. Ensure at least one real editor window
   ensure_editor_window()
 
-  -- Restore neo-tree if it was open before the diff
+  -- 7. Restore neo-tree if it was open before the diff
   if _neotree_was_open then
     _neotree_was_open = false
     pcall(vim.cmd, "Neotree show left")
   end
+
+  -- 8. Return focus to Claude terminal
+  focus_claude_terminal()
 end
 
--- Entering diff mode: only close neo-tree for space (do NOT close/manipulate other windows)
+local function schedule_diff_cleanup()
+  if not _in_claude_diff then return end
+  -- Debounce: cancel any pending timer and set a new one.
+  -- 150ms delay lets claudecode finish its own synchronous cleanup first.
+  if _cleanup_timer then
+    pcall(function() _cleanup_timer:stop() end)
+  end
+  _cleanup_timer = vim.defer_fn(function()
+    diff_cleanup()
+  end, 150)
+end
+
+-- Entering diff mode: track Claude diff participants, hide neo-tree
+--
+-- CRITICAL TIMING: claudecode.nvim calls diffthis BEFORE setting the
+-- b:claudecode_diff_tab_name marker (setup_new_buffer lines 578/588 vs 594).
+-- Both OptionSet events fire before the marker exists. A synchronous check
+-- would ALWAYS fail. We MUST defer via vim.schedule so the check runs after
+-- claudecode finishes setup_new_buffer and the marker is in place.
 autocmd("OptionSet", {
   group = augroup("diff_layout", { clear = true }),
   pattern = "diff",
   callback = function()
-    -- Only trigger when diff is being turned ON
-    if not vim.v.option_new or vim.v.option_new == false or vim.v.option_new == "0" then return end
-    _had_diff_activity = true
-    -- Close neo-tree to give diff maximum space
-    if neotree_is_visible() then
-      _neotree_was_open = true
-      pcall(vim.cmd, "Neotree close")
-    end
+    local new_val = vim.v.option_new
+    if new_val == false or new_val == "0" or new_val == 0 then return end
+
+    vim.schedule(function()
+      -- Scan all windows currently in diff mode for Claude markers
+      local claude_diff_found = false
+      for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+        if vim.api.nvim_win_is_valid(win) and vim.wo[win].diff then
+          if is_claude_diff_buf(vim.api.nvim_win_get_buf(win)) then
+            claude_diff_found = true
+            break
+          end
+        end
+      end
+
+      -- Not a Claude diff (e.g. gitsigns diffthis) — ignore
+      if not claude_diff_found then return end
+
+      -- Track ALL buffers currently in diff mode (original + proposed)
+      for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+        if vim.api.nvim_win_is_valid(win) and vim.wo[win].diff then
+          _diff_bufs[vim.api.nvim_win_get_buf(win)] = true
+        end
+      end
+
+      if not _in_claude_diff then
+        _in_claude_diff = true
+        -- Save which editor buffers were visible before the diff took over
+        _pre_diff_bufs = {}
+        for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+          if vim.api.nvim_win_is_valid(win) and not is_sidebar_win(win) then
+            local buf = vim.api.nvim_win_get_buf(win)
+            if vim.bo[buf].buftype ~= "terminal" and not _diff_bufs[buf] then
+              table.insert(_pre_diff_bufs, buf)
+            end
+          end
+        end
+        if neotree_is_visible() then
+          _neotree_was_open = true
+          pcall(vim.cmd, "Neotree close")
+        end
+      end
+    end)
   end,
 })
 
@@ -420,8 +550,8 @@ autocmd("OptionSet", {
 autocmd("WinClosed", {
   group = augroup("diff_cleanup_winclosed", { clear = true }),
   callback = function()
-    if not _had_diff_activity then return end
-    vim.schedule(diff_cleanup)
+    if not _in_claude_diff then return end
+    schedule_diff_cleanup()
   end,
 })
 
@@ -429,9 +559,8 @@ autocmd("WinClosed", {
 autocmd("BufEnter", {
   group = augroup("diff_cleanup_bufenter", { clear = true }),
   callback = function()
-    if not _had_diff_activity then return end
-    -- Never trigger cleanup when entering a terminal buffer (e.g. Claude terminal)
+    if not _in_claude_diff then return end
     if vim.bo.buftype == "terminal" then return end
-    vim.schedule(diff_cleanup)
+    schedule_diff_cleanup()
   end,
 })

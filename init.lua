@@ -4,7 +4,7 @@ vim.g.mapleader = " "
 vim.g.maplocalleader = "\\"
 
 -- Compatibility shim for plugins using deprecated vim.lsp.buf_get_clients()
--- This silently redirects to the modern API, fixing warnings from plugins like project.nvim
+-- This silently redirects to the modern API, fixing warnings from older plugins
 vim.lsp.buf_get_clients = function(bufnr)
   return vim.lsp.get_clients({ buffer = bufnr or 0 })
 end
