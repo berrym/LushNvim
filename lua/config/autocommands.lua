@@ -306,21 +306,30 @@ autocmd("WinClosed", {
   end,
 })
 
--- Prevent nvim from quitting when closing the last editor window (sidebars remain)
+-- Prevent closing the last real file from terminating nvim.
+-- :q on a file → replaces with scratch buffer, nvim stays alive.
+-- :q on scratch/empty or dashboard → lets nvim exit normally.
+-- :qa, :qall, :wqa, <leader>qq → always exit (they close all windows at once).
 autocmd("QuitPre", {
   group = augroup("quit_guardian", { clear = true }),
   callback = function()
-    -- If only one real window remains, create a scratch buffer split so :q
-    -- closes just that window rather than terminating nvim entirely
+    -- Dashboard: user chose quit — let it through
+    if vim.bo.filetype == "alpha" then return end
+    -- Terminal buffers: don't intercept terminal close
+    if vim.bo.buftype == "terminal" then return end
+    -- Scratch/empty unnamed buffer: nothing to protect, let nvim exit
+    local buf = vim.api.nvim_get_current_buf()
+    if vim.api.nvim_buf_get_name(buf) == "" and vim.bo[buf].buftype == ""
+        and not vim.bo[buf].modified then
+      local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+      if #lines <= 1 and (lines[1] or "") == "" then return end
+    end
+    -- This is a real file in the last (or only) real window — protect it.
+    -- Replace with scratch so :q closes the file but nvim stays alive.
     if count_real_wins() <= 1 then
-      local sidebar_count = 0
-      for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
-        if is_sidebar_win(win) then sidebar_count = sidebar_count + 1 end
-      end
-      if sidebar_count > 0 then
-        vim.cmd("vsplit")
-        vim.api.nvim_win_set_buf(0, get_scratch_buf())
-      end
+      vim.api.nvim_win_set_buf(0, get_scratch_buf())
+      -- Close sidebars gracefully so the user lands on a clean scratch
+      -- (they can reopen neo-tree etc. with keybindings)
     end
   end,
 })
