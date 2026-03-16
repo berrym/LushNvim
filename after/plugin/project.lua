@@ -2,7 +2,7 @@ local utils = require("config.utils")
 local group = utils.get_plugin_group()
 
 if utils.enabled(group, "project") then
-	require("project").setup({
+	require("project_nvim").setup({
 		-- Detection patterns: covers all common project types
 		patterns = {
 			".git",

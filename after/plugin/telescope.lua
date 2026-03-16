@@ -52,10 +52,10 @@ if utils.enabled(group, "telescope") then
   -- "Empty workspace" at top opens a blank slate with no project CWD
   -- Used by alpha dashboard "Open project" button and <leader>fp
   _G.telescope_open_project = function()
-    local ok_proj, proj_history = pcall(require, "project.utils.history")
+    local ok_proj, proj_history = pcall(require, "project_nvim.utils.history")
     if not ok_proj then
-      -- Fallback for DrKJeff16 fork API differences
-      ok_proj, proj_history = pcall(require, "project_nvim.utils.history")
+      -- Fallback if fork changes module name in future
+      ok_proj, proj_history = pcall(require, "project.utils.history")
     end
     if not ok_proj then
       utils.notify_warn("project.nvim not available", "Project")
