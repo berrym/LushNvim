@@ -91,6 +91,15 @@ if utils.enabled(group, "claudecode") then
 		return false
 	end
 
+	-- Scroll Claude terminal to bottom by entering terminal mode
+	local function scroll_to_bottom()
+		vim.defer_fn(function()
+			if vim.bo.buftype == "terminal" and vim.api.nvim_get_mode().mode ~= "t" then
+				vim.cmd("startinsert")
+			end
+		end, 10)
+	end
+
 	-- Resize a window for the current position
 	local function resize_for_position(win)
 		local pos_config = position_configs[_G.claudecode_position]
@@ -108,6 +117,7 @@ if utils.enabled(group, "claudecode") then
 		vim.cmd(split_for[_G.claudecode_position])
 		vim.api.nvim_win_set_buf(0, managed_buf)
 		resize_for_position(0)
+		scroll_to_bottom()
 	end
 
 	-- Toggle the managed terminal (show/hide)
@@ -194,12 +204,15 @@ if utils.enabled(group, "claudecode") then
 					vim.api.nvim_win_close(win, false)
 				else
 					vim.api.nvim_set_current_win(win)
+					scroll_to_bottom()
 				end
 			else
 				show_managed()
 			end
 		else
 			require("claudecode.terminal").focus_toggle({})
+			-- Plugin's focus_toggle opens/focuses the terminal; scroll to bottom
+			scroll_to_bottom()
 		end
 	end, { force = true, desc = "Focus/toggle Claude Code terminal" })
 

@@ -381,17 +381,18 @@ local function is_empty_unnamed_buf(buf)
   return #lines <= 1 and (lines[1] or "") == ""
 end
 
+local function is_claude_terminal(buf)
+  return vim.api.nvim_buf_is_valid(buf)
+      and vim.bo[buf].buftype == "terminal"
+      and vim.api.nvim_buf_get_name(buf):lower():match("claude") ~= nil
+end
+
 local function focus_claude_terminal()
   for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
-    if vim.api.nvim_win_is_valid(win) then
-      local buf = vim.api.nvim_win_get_buf(win)
-      if vim.bo[buf].buftype == "terminal" then
-        local name = vim.api.nvim_buf_get_name(buf)
-        if name:lower():match("claude") then
-          pcall(vim.api.nvim_set_current_win, win)
-          return
-        end
-      end
+    if vim.api.nvim_win_is_valid(win) and is_claude_terminal(vim.api.nvim_win_get_buf(win)) then
+      pcall(vim.api.nvim_set_current_win, win)
+      -- WinEnter autocmd handles scroll-to-bottom + terminal mode
+      return
     end
   end
 end
@@ -571,5 +572,30 @@ autocmd("BufEnter", {
     if not _in_claude_diff then return end
     if vim.bo.buftype == "terminal" then return end
     schedule_diff_cleanup()
+  end,
+})
+
+-- ══════════════════════════════════════════════════════════════════════════════
+-- Claude Terminal Auto-Scroll: enter terminal mode when Claude terminal gains
+-- focus so the view anchors to the prompt. Switching away exits terminal mode
+-- (normal nvim behavior); switching back re-enters it. Users can still scroll
+-- back with <C-\><C-n> without leaving the window — WinEnter won't re-fire.
+-- ══════════════════════════════════════════════════════════════════════════════
+
+autocmd("WinEnter", {
+  group = augroup("claude_terminal_scroll", { clear = true }),
+  callback = function()
+    local buf = vim.api.nvim_get_current_buf()
+    if not is_claude_terminal(buf) then return end
+    -- Defer briefly so layout operations (split, resize) finish first
+    vim.defer_fn(function()
+      -- Re-check: buffer/window may have changed during defer
+      local cur_buf = vim.api.nvim_get_current_buf()
+      if not is_claude_terminal(cur_buf) then return end
+      -- Only enter terminal mode if not already in it
+      if vim.api.nvim_get_mode().mode ~= "t" then
+        vim.cmd("startinsert")
+      end
+    end, 10)
   end,
 })
