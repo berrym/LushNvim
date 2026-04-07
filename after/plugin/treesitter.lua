@@ -7,10 +7,19 @@ if utils.enabled(group, "treesitter") then
   -- New main branch setup
   require("nvim-treesitter").setup({})
 
-  -- Install parsers
+  -- Install only missing parsers (skip already-installed ones to avoid unnecessary compilation)
   if #parsers > 0 then
     vim.schedule(function()
-      require("nvim-treesitter").install(parsers)
+      local ts = require("nvim-treesitter")
+      local installed = ts.get_installed()
+      local installed_set = {}
+      for _, lang in ipairs(installed) do
+        installed_set[lang] = true
+      end
+      local missing = vim.tbl_filter(function(p) return not installed_set[p] end, parsers)
+      if #missing > 0 then
+        ts.install(missing)
+      end
     end)
   end
 

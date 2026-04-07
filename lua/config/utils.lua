@@ -80,12 +80,11 @@ end
 -- updates everything in LushNvim
 M.update_all = function()
   M.notify_info("Pulling latest changes...")
-  vim.fn.jobstart({ "git", "pull", "--rebase" })
+  vim.fn.system({ "git", "pull", "--rebase" })
+  -- lazy.sync handles plugin updates + treesitter parser recompilation via build = ":TSUpdate"
   require("lazy").sync({ wait = true })
   M.notify_info("Updating Mason packages...")
   M.update_mason()
-  -- Update treesitter parsers via command (stable across branches)
-  vim.cmd("TSUpdate")
   M.notify_info("LushNvim updated!")
 end
 
