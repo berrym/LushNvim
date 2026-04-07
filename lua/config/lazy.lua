@@ -70,12 +70,12 @@ local plugins = {
     event = "VimEnter",
   },
   {
-    "williamboman/mason.nvim",
+    "mason-org/mason.nvim",
     cond = enabled(group, "lsp"),
     event = "VimEnter",
   },
   {
-    "williamboman/mason-lspconfig.nvim",
+    "mason-org/mason-lspconfig.nvim",
     cond = enabled(group, "lsp"),
     event = "VimEnter",
   },
@@ -155,12 +155,8 @@ local plugins = {
         cond = enabled(group, "copilot"),
       },
     },
-    -- use a release tag to download pre-built binaries
-    version = "*",
-    -- AND/OR build from source, requires nightly: https://rust-lang.github.io/rustup/concepts/channels.html#working-with-nightly-rust
-    -- build = 'cargo build --release',
-    -- If you use nix, you can build from source using latest nightly rust with:
-    -- build = 'nix run .#build-plugin',
+    -- pin to v1.x to avoid breaking v2 migration (v2 requires blink.lib dependency)
+    version = "1.*",
   },
   { "NvChad/nvim-colorizer.lua", cond = enabled(group, "colorizer"), event = "VimEnter" },
   {
@@ -702,7 +698,7 @@ local plugins = {
   -- NOTE: Use `rustup component add rust-analyzer` instead of Mason for rust-analyzer
   {
     "mrcjkb/rustaceanvim",
-    version = "^7",
+    version = "^8",
     cond = enabled(group, "rustaceanvim"),
     lazy = false,
     ft = { "rust" },

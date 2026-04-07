@@ -55,7 +55,7 @@ if utils.enabled(group, "session_saved_notification") then
   autocmd("User", {
     desc = "notify session saved",
     group = augroup("session save", { clear = true }),
-    pattern = "SessionSavePost",
+    pattern = "PersistedSavePost",
     callback = function()
       utils.notify_info("Session Saved")
     end,
