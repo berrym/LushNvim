@@ -391,10 +391,19 @@ local function focus_claude_terminal()
   for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
     if vim.api.nvim_win_is_valid(win) and is_claude_terminal(vim.api.nvim_win_get_buf(win)) then
       pcall(vim.api.nvim_set_current_win, win)
-      -- WinEnter autocmd handles scroll-to-bottom + terminal mode
-      return
+      -- Enter terminal mode directly (belt-and-suspenders with WinEnter autocmd).
+      -- Schedule so the window switch fully settles before startinsert.
+      vim.schedule(function()
+        if vim.api.nvim_win_is_valid(win)
+            and vim.api.nvim_get_current_win() == win
+            and is_claude_terminal(vim.api.nvim_win_get_buf(win)) then
+          vim.cmd.startinsert()
+        end
+      end)
+      return true
     end
   end
+  return false
 end
 
 local function diff_cleanup()
@@ -551,6 +560,10 @@ autocmd("OptionSet", {
           _neotree_was_open = true
           pcall(vim.cmd, "Neotree close")
         end
+        -- Shift focus back to Claude terminal so user can keep typing to Claude
+        -- while the diff is visible. Delay lets claudecode finish its own focus
+        -- setup before we override it.
+        vim.defer_fn(focus_claude_terminal, 150)
       end
     end)
   end,
@@ -587,15 +600,14 @@ autocmd("WinEnter", {
   callback = function()
     local buf = vim.api.nvim_get_current_buf()
     if not is_claude_terminal(buf) then return end
-    -- Defer briefly so layout operations (split, resize) finish first
-    vim.defer_fn(function()
-      -- Re-check: buffer/window may have changed during defer
-      local cur_buf = vim.api.nvim_get_current_buf()
-      if not is_claude_terminal(cur_buf) then return end
-      -- Only enter terminal mode if not already in it
-      if vim.api.nvim_get_mode().mode ~= "t" then
-        vim.cmd("startinsert")
+    -- Schedule so layout operations (split, set_buf, resize) fully settle first.
+    -- startinsert on a terminal buffer enters Terminal-Job mode (the "insert
+    -- mode" for terminals), which anchors the viewport to the terminal cursor.
+    vim.schedule(function()
+      if is_claude_terminal(vim.api.nvim_get_current_buf())
+          and vim.api.nvim_get_mode().mode ~= "t" then
+        vim.cmd.startinsert()
       end
-    end, 10)
+    end)
   end,
 })
