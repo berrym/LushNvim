@@ -345,10 +345,9 @@ autocmd("QuitPre", {
 
 local _neotree_was_open = false
 local _in_claude_diff = false
-local _diff_bufs = {}        -- {[buf_id] = true} buffers that entered diff mode during a Claude diff
-local _cleanup_timer = nil   -- debounce timer to prevent event storms
-local _saved_layout = nil    -- pruned winlayout snapshot used for full layout restore
-local _snapshot_timer = nil  -- debounce timer for snapshotting the editor layout
+local _diff_bufs = {}       -- {[buf_id] = true} buffers that entered diff mode during a Claude diff
+local _cleanup_timer = nil  -- debounce timer to prevent event storms
+local _pre_diff_bufs = {}   -- {buf_id, buf_id, ...} editor buffers that were open before diff started
 
 local function neotree_is_visible()
   local ok, manager = pcall(require, "neo-tree.sources.manager")
@@ -407,101 +406,29 @@ local function focus_claude_terminal()
   return false
 end
 
--- ──────────────────────────────────────────────────────────────────────────
--- Layout snapshot/replay
---
--- We snapshot the editor's window layout (the pruned winlayout() tree, with
--- sidebars/terminals/floats removed) on every layout-changing event, debounced
--- so claudecode's transient mid-diff state never gets captured. The snapshot
--- is then replayed on diff exit to fully restore window structure, sizes,
--- buffers, and cursor positions.
---
--- Snapshots are skipped while a diff is active, so the snapshot in memory is
--- always the user's most recent clean editor state.
--- ──────────────────────────────────────────────────────────────────────────
-
-local function capture_pruned_layout(node)
-  if not node then return nil end
-  local kind = node[1]
-  if kind == "leaf" then
-    local win = node[2]
-    if not vim.api.nvim_win_is_valid(win) then return nil end
-    if is_sidebar_win(win) then return nil end  -- prunes terminals/floats/neo-tree/etc
-    local buf = vim.api.nvim_win_get_buf(win)
-    if vim.bo[buf].buftype == "terminal" then return nil end
-    local cursor_ok, cursor = pcall(vim.api.nvim_win_get_cursor, win)
-    return {
-      kind = "leaf",
-      buf = buf,
-      cursor = cursor_ok and cursor or { 1, 0 },
-      width = vim.api.nvim_win_get_width(win),
-      height = vim.api.nvim_win_get_height(win),
-    }
-  elseif kind == "row" or kind == "col" then
-    local children = {}
-    for _, child in ipairs(node[2]) do
-      local c = capture_pruned_layout(child)
-      if c then table.insert(children, c) end
-    end
-    if #children == 0 then return nil end
-    if #children == 1 then return children[1] end
-    return { kind = kind, children = children }
-  end
-  return nil
-end
-
--- Walk a saved tree, recreating splits from a single host window. Returns a
--- flat list of { node = leaf, win = win_id } pairs in tree order so the caller
--- can apply buffers/cursors/sizes in a second pass.
-local function replay_layout(node, host_win)
-  local pairs_list = {}
-  local function recurse(n, win)
-    if n.kind == "leaf" then
-      table.insert(pairs_list, { node = n, win = win })
-      return
-    end
-    local children = n.children
-    if not children or #children == 0 then return end
-    pcall(vim.api.nvim_set_current_win, win)
-    local sibling_wins = { win }
-    for i = 2, #children do
-      local cmd = (n.kind == "row") and "rightbelow vsplit" or "rightbelow split"
-      local ok = pcall(vim.cmd, cmd)
-      if not ok then break end
-      table.insert(sibling_wins, vim.api.nvim_get_current_win())
-    end
-    for i, child in ipairs(children) do
-      if sibling_wins[i] then
-        recurse(child, sibling_wins[i])
-      end
-    end
-  end
-  recurse(node, host_win)
-  return pairs_list
-end
-
-local function snapshot_editor_layout()
-  _snapshot_timer = nil
-  if _in_claude_diff then return end
-  -- Skip if any window is in diff mode (gitsigns diffthis, fugitive, etc.)
+-- Equalize editor windows without disturbing sidebars/terminals: temporarily
+-- set winfixwidth/winfixheight on every sidebar & terminal window so that
+-- wincmd = only affects the editor area, then restore the previous values.
+local function equalize_editor_area()
+  local saved = {}
   for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
-    if vim.api.nvim_win_is_valid(win) and vim.wo[win].diff then return end
+    if vim.api.nvim_win_is_valid(win) and is_sidebar_win(win) then
+      table.insert(saved, {
+        win = win,
+        fixw = vim.wo[win].winfixwidth,
+        fixh = vim.wo[win].winfixheight,
+      })
+      vim.wo[win].winfixwidth = true
+      vim.wo[win].winfixheight = true
+    end
   end
-  local tree = capture_pruned_layout(vim.fn.winlayout())
-  if tree then
-    _saved_layout = tree
+  pcall(vim.cmd, "wincmd =")
+  for _, s in ipairs(saved) do
+    if vim.api.nvim_win_is_valid(s.win) then
+      vim.wo[s.win].winfixwidth = s.fixw
+      vim.wo[s.win].winfixheight = s.fixh
+    end
   end
-end
-
-local function schedule_snapshot()
-  if _in_claude_diff then return end
-  if _snapshot_timer then
-    pcall(function() _snapshot_timer:stop() end)
-  end
-  -- 250ms debounce: long enough that claudecode's burst of WinNew/BufWinEnter
-  -- between create_split → :edit → diffthis all collapses into a single check
-  -- which then bails because the diff is up.
-  _snapshot_timer = vim.defer_fn(snapshot_editor_layout, 250)
 end
 
 local function diff_cleanup()
@@ -513,111 +440,106 @@ local function diff_cleanup()
   _in_claude_diff = false
   local participant_bufs = _diff_bufs
   _diff_bufs = {}
-  local saved_layout = _saved_layout
-  _saved_layout = nil
+  local saved_bufs = _pre_diff_bufs
+  _pre_diff_bufs = {}
 
-  -- 1. Force diffoff on any lingering windows
+  -- 1. Turn off diff mode on any remaining windows
   for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
     if vim.api.nvim_win_is_valid(win) and vim.wo[win].diff then
       vim.api.nvim_win_call(win, function() vim.cmd("diffoff") end)
     end
   end
 
-  -- 2. Close any non-sidebar editor window holding a diff participant or
-  -- claude pseudo-buffer. This collapses claudecode's leftover diff windows
-  -- so we can replay the saved layout from a single host window.
-  for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
-    if vim.api.nvim_win_is_valid(win) and not is_sidebar_win(win) then
-      local buf = vim.api.nvim_win_get_buf(win)
-      if vim.bo[buf].buftype ~= "terminal"
-          and (participant_bufs[buf] or is_claude_diff_buf(buf)) then
-        if #vim.api.nvim_tabpage_list_wins(0) > 1 then
-          pcall(vim.api.nvim_win_close, win, true)
-        end
-      end
-    end
-  end
-
-  -- 3. Make sure at least one editor window survives to host the replay.
-  ensure_editor_window()
-
-  -- 4. Pick a host window and close any other surviving editor windows.
-  -- Replay needs to start from exactly one window so split commands attach
-  -- to the right place.
-  local host_win = nil
-  local extras = {}
+  -- 2. Collect diff/stale windows to reclaim (NOT terminal/sidebar).
+  -- These windows are already positioned correctly within the IDE layout
+  -- (between sidebars/terminal), so reusing them keeps everything stable.
+  local reclaimable = {}
   for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
     if vim.api.nvim_win_is_valid(win) and not is_sidebar_win(win) then
       local buf = vim.api.nvim_win_get_buf(win)
       if vim.bo[buf].buftype ~= "terminal" then
-        if not host_win then
-          host_win = win
-        else
-          table.insert(extras, win)
-        end
-      end
-    end
-  end
-  for _, win in ipairs(extras) do
-    if vim.api.nvim_win_is_valid(win) and #vim.api.nvim_tabpage_list_wins(0) > 1 then
-      pcall(vim.api.nvim_win_close, win, true)
-    end
-  end
-
-  -- 5. Replay the saved winlayout from the host. Each leaf in the saved tree
-  -- becomes a new sibling window via row/col splits, with the original buffer
-  -- and cursor restored. Sizes are applied in a final pass.
-  if host_win and vim.api.nvim_win_is_valid(host_win) and saved_layout then
-    local pairs_list = replay_layout(saved_layout, host_win)
-
-    for _, p in ipairs(pairs_list) do
-      local win, node = p.win, p.node
-      if vim.api.nvim_win_is_valid(win) and node.kind == "leaf" then
-        if node.buf and vim.api.nvim_buf_is_valid(node.buf)
-            and vim.api.nvim_buf_is_loaded(node.buf) then
-          pcall(vim.api.nvim_win_set_buf, win, node.buf)
-          if node.cursor then
-            pcall(vim.api.nvim_win_set_cursor, win, node.cursor)
-          end
-        else
-          -- Saved buffer is gone — fall back to scratch
-          pcall(vim.api.nvim_win_set_buf, win, get_scratch_buf())
-        end
-      end
-    end
-
-    -- Apply saved widths/heights after all buffers are placed so cursor and
-    -- statusline state don't trip up sizing math.
-    for _, p in ipairs(pairs_list) do
-      if vim.api.nvim_win_is_valid(p.win) then
-        if p.node.width then
-          pcall(vim.api.nvim_win_set_width, p.win, p.node.width)
-        end
-        if p.node.height then
-          pcall(vim.api.nvim_win_set_height, p.win, p.node.height)
+        if participant_bufs[buf] or is_claude_diff_buf(buf) or is_empty_unnamed_buf(buf) then
+          table.insert(reclaimable, win)
         end
       end
     end
   end
 
-  -- 6. Delete claude pseudo-buffers (the proposed-side ones with the marker)
-  -- that are no longer displayed. Real file participant buffers are kept in
-  -- the buffer list — the user might still want them.
-  for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+  -- 3. Build restore list: valid, loaded, non-diff pre-diff buffers
+  local restore_bufs = {}
+  for _, buf in ipairs(saved_bufs) do
     if vim.api.nvim_buf_is_valid(buf) and vim.api.nvim_buf_is_loaded(buf)
-        and is_claude_diff_buf(buf) then
-      local displayed = false
-      for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
-        if vim.api.nvim_win_is_valid(win) and vim.api.nvim_win_get_buf(win) == buf then
-          displayed = true
+        and not participant_bufs[buf] and not is_claude_diff_buf(buf) then
+      table.insert(restore_bufs, buf)
+    end
+  end
+
+  -- 4. Restore pre-diff buffers into reclaimable windows, close extras
+  local ri = 1
+  for _, win in ipairs(reclaimable) do
+    if vim.api.nvim_win_is_valid(win) then
+      if ri <= #restore_bufs then
+        vim.api.nvim_win_set_buf(win, restore_bufs[ri])
+        ri = ri + 1
+      elseif count_real_wins() > 1 then
+        pcall(vim.api.nvim_win_close, win, true)
+      else
+        vim.api.nvim_win_set_buf(win, get_scratch_buf())
+      end
+    end
+  end
+
+  -- 4b. If more pre-diff buffers remain than reclaimable windows had room
+  -- for, create vsplits from the first available editor window. The splits
+  -- stay within the editor area (between sidebars/terminal) because they
+  -- are nested inside the host window's position in the frame layout.
+  if ri <= #restore_bufs then
+    local host_win = nil
+    for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+      if vim.api.nvim_win_is_valid(win) and not is_sidebar_win(win) then
+        local buf = vim.api.nvim_win_get_buf(win)
+        if vim.bo[buf].buftype ~= "terminal" then
+          host_win = win
           break
         end
       end
-      if not displayed then
-        pcall(vim.api.nvim_buf_delete, buf, { force = true })
+    end
+    if host_win then
+      pcall(vim.api.nvim_set_current_win, host_win)
+      while ri <= #restore_bufs do
+        local ok = pcall(vim.cmd, "vsplit")
+        if not ok then break end
+        vim.api.nvim_win_set_buf(0, restore_bufs[ri])
+        ri = ri + 1
       end
     end
   end
+
+  -- 4c. Equalize editor windows without disturbing Claude terminal or
+  -- any other sidebar. This ensures the restored buffers share the editor
+  -- area evenly rather than being half-and-half from the vsplits above.
+  equalize_editor_area()
+
+  -- 5. Delete diff-participant and Claude diff buffers no longer displayed
+  for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+    if vim.api.nvim_buf_is_valid(buf) and vim.api.nvim_buf_is_loaded(buf) then
+      if participant_bufs[buf] or is_claude_diff_buf(buf) then
+        local displayed = false
+        for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+          if vim.api.nvim_win_is_valid(win) and vim.api.nvim_win_get_buf(win) == buf then
+            displayed = true
+            break
+          end
+        end
+        if not displayed then
+          pcall(vim.api.nvim_buf_delete, buf, { force = true })
+        end
+      end
+    end
+  end
+
+  -- 6. Ensure at least one real editor window
+  ensure_editor_window()
 
   -- 7. Restore neo-tree if it was open before the diff
   if _neotree_was_open then
@@ -679,36 +601,27 @@ autocmd("OptionSet", {
 
       if not _in_claude_diff then
         _in_claude_diff = true
-        -- If a debounced snapshot is still pending, drop it — the most recent
-        -- pre-diff snapshot in _saved_layout is the one we want to replay.
-        if _snapshot_timer then
-          pcall(function() _snapshot_timer:stop() end)
-          _snapshot_timer = nil
-        end
-        -- Defensive fallback: if no snapshot was ever taken (e.g. user opened
-        -- a diff before any layout-change event fired), capture the current
-        -- non-diff windows now. Better than no restoration at all.
-        if not _saved_layout then
-          _saved_layout = capture_pruned_layout(vim.fn.winlayout())
+        -- Save which editor buffers were visible before the diff took over,
+        -- and collect their windows so we can close them below.
+        _pre_diff_bufs = {}
+        local wins_to_close = {}
+        for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+          if vim.api.nvim_win_is_valid(win) and not is_sidebar_win(win) and not vim.wo[win].diff then
+            local buf = vim.api.nvim_win_get_buf(win)
+            if vim.bo[buf].buftype ~= "terminal" and not _diff_bufs[buf] then
+              table.insert(_pre_diff_bufs, buf)
+              table.insert(wins_to_close, win)
+            end
+          end
         end
         if neotree_is_visible() then
           _neotree_was_open = true
           pcall(vim.cmd, "Neotree close")
         end
         -- Hide every non-diff editor window so the diffs get the entire
-        -- editor area to themselves. The full layout is preserved in
-        -- _saved_layout for replay on diff exit. We can close unconditionally
-        -- here: the diff windows are guaranteed to exist (we just detected
-        -- one above), so the tab can never become empty.
-        local wins_to_close = {}
-        for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
-          if vim.api.nvim_win_is_valid(win) and not is_sidebar_win(win) and not vim.wo[win].diff then
-            local buf = vim.api.nvim_win_get_buf(win)
-            if vim.bo[buf].buftype ~= "terminal" and not _diff_bufs[buf] then
-              table.insert(wins_to_close, win)
-            end
-          end
-        end
+        -- editor area to themselves. The diff windows are guaranteed to
+        -- exist (we just detected one above), so the tab can never become
+        -- empty from this.
         for _, win in ipairs(wins_to_close) do
           if vim.api.nvim_win_is_valid(win) then
             pcall(vim.api.nvim_win_close, win, false)
@@ -742,15 +655,6 @@ autocmd("BufEnter", {
     if vim.bo.buftype == "terminal" then return end
     schedule_diff_cleanup()
   end,
-})
-
--- Snapshot the editor's window layout on every layout-changing event so we
--- have a fresh tree to replay on diff exit. The snapshot is debounced (250ms)
--- and skips while a diff is active, so claudecode's mid-diff churn never
--- pollutes the captured state.
-autocmd({ "WinNew", "WinClosed", "BufWinEnter" }, {
-  group = augroup("editor_layout_snapshot", { clear = true }),
-  callback = schedule_snapshot,
 })
 
 -- ══════════════════════════════════════════════════════════════════════════════
