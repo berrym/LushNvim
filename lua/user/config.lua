@@ -281,6 +281,8 @@ M.enable_plugins = {
   package_info = true,
   ts_error_translator = true,
   template_string = true,
+  -- Web (auto-enabled by the "web" language bundle)
+  schemastore = true,
 }
 
 -- add extra plugins in here

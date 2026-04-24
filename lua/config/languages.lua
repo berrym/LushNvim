@@ -173,11 +173,14 @@ M.bundles = {
 		enable_plugins = { lazydev = true },
 	},
 	web = {
-		-- Generic web stack (HTML/CSS/JSON). For JS/TS, enable the `typescript` bundle.
+		-- Generic web stack (HTML/CSS/JSON + emmet). For JS/TS, enable the
+		-- `typescript` bundle. Formatting is delegated to prettierd — the
+		-- built-in formatters in html/css/json LSPs are disabled below.
 		mason_null_ls = {
 			"html-lsp",
 			"css-lsp",
 			"json-lsp",
+			"emmet-language-server",
 			"prettierd",
 		},
 		mason_dap = {},
@@ -191,8 +194,67 @@ M.bundles = {
 			"yaml",
 			"markdown",
 		},
-		lsp_configs = {},
-		enable_plugins = {},
+		lsp_configs = {
+			html = {
+				cmd = { "vscode-html-language-server", "--stdio" },
+				filetypes = { "html", "htmldjango", "templ" },
+				init_options = {
+					configurationSection = { "html", "css", "javascript" },
+					embeddedLanguages = { css = true, javascript = true },
+					provideFormatter = false, -- prettierd handles formatting
+				},
+				settings = {
+					html = {
+						format = { templating = false, wrapLineLength = 120, wrapAttributes = "auto" },
+						hover = { documentation = true, references = true },
+						autoClosingTags = true,
+					},
+				},
+			},
+			cssls = {
+				cmd = { "vscode-css-language-server", "--stdio" },
+				filetypes = { "css", "scss", "less" },
+				init_options = { provideFormatter = false },
+				settings = {
+					css = { validate = true, lint = { unknownAtRules = "ignore" } },
+					scss = { validate = true, lint = { unknownAtRules = "ignore" } },
+					less = { validate = true, lint = { unknownAtRules = "ignore" } },
+				},
+			},
+			jsonls = {
+				cmd = { "vscode-json-language-server", "--stdio" },
+				filetypes = { "json", "jsonc" },
+				init_options = { provideFormatter = false },
+				settings = {
+					json = {
+						validate = { enable = true },
+						-- schemas injected via before_init when schemastore is enabled
+					},
+				},
+				before_init = function(_, config)
+					local ok, schemastore = pcall(require, "schemastore")
+					if ok then
+						config.settings = config.settings or {}
+						config.settings.json = config.settings.json or {}
+						config.settings.json.schemas = schemastore.json.schemas()
+					end
+				end,
+			},
+			emmet_language_server = {
+				cmd = { "emmet-language-server", "--stdio" },
+				filetypes = {
+					"css", "eruby", "html", "htmldjango", "javascript", "javascriptreact",
+					"less", "pug", "sass", "scss", "svelte", "templ",
+					"typescriptreact", "vue",
+				},
+				init_options = {
+					showAbbreviationSuggestions = true,
+					showExpandedAbbreviation = "always",
+					showSuggestionsAsSnippets = false,
+				},
+			},
+		},
+		enable_plugins = { schemastore = true },
 	},
 	typescript = {
 		-- First-class JS/TS stack: vtsls (VS Code-derived LSP, community standard 2026),

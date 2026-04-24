@@ -90,6 +90,13 @@ local plugins = {
       },
     },
   },
+  -- JSON schema catalog for jsonls (gated by `web` bundle's enable_plugins).
+  {
+    "b0o/SchemaStore.nvim",
+    cond = enabled(group, "schemastore"),
+    lazy = true, -- loaded on demand by jsonls before_init hook
+    version = false, -- track main; schemas update frequently
+  },
   -- ── JS/TS ecosystem plugins (gated by `typescript` bundle's enable_plugins) ──
   {
     "vuki656/package-info.nvim",
