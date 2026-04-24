@@ -12,46 +12,104 @@ create_user_command("IblRainbowOff", function()
   require("ibl").setup()
 end, { desc = "Disable colored indent markers" })
 
--- Hot-reload safe config components (options, keymaps, autocommands)
-create_user_command("LushReload", function()
+-- Hot-reload LushNvim's own modules and re-source after/plugin/*. `:LushReload!`
+-- (bang) additionally replays `user.config.custom_conf()` — useful when you've
+-- edited the colorscheme / statusline choice in user/config.lua and want the
+-- same effect as a fresh start (including the startup greeting).
+--
+-- What this can and cannot do:
+--   Reloaded: options, keymaps (overwrites), autocmds (augroup clear=true),
+--             user commands, lsp config registrations, all after/plugin setup.
+--   NOT handled (Neovim limitations): removed keymaps/options linger until
+--             restart; already-attached LSP clients keep their old config
+--             (use :LspRestart); lazy.nvim plugin `config` functions are not
+--             re-invoked (they ran once at plugin load).
+create_user_command("LushReload", function(opts)
   local utils = require("config.utils")
-  local reloaded = {}
+  local cleared = 0
   local failed = {}
 
-  -- Modules that are safe to reload
-  local safe_modules = {
+  -- 1. Clear every LushNvim module so `require` re-executes them.
+  --    Covers config.*, user.* (plugin-configs, usercommands, etc.) and
+  --    the lush.* subtree (statuslines, health).
+  local prefixes = { "^config%.", "^user%.", "^lush%." }
+  for name, _ in pairs(package.loaded) do
+    for _, pat in ipairs(prefixes) do
+      if name:match(pat) then
+        package.loaded[name] = nil
+        cleared = cleared + 1
+        break
+      end
+    end
+  end
+
+  -- 2. Re-require the core entry points in a deterministic order. user.config
+  --    pulls in config.languages via its `apply()` call, so we don't need to
+  --    require that one explicitly.
+  local entrypoints = {
+    "config.utils",
     "config.options",
     "config.keybindings",
     "config.autocommands",
+    "config.lsp",
+    "config.usercommands",
     "user.config",
   }
-
-  for _, module in ipairs(safe_modules) do
-    -- Clear from cache
-    package.loaded[module] = nil
-    -- Attempt to reload
+  for _, module in ipairs(entrypoints) do
     local ok, err = pcall(require, module)
-    if ok then
-      table.insert(reloaded, module)
-    else
+    if not ok then
       table.insert(failed, module .. ": " .. tostring(err))
     end
   end
 
-  -- Re-apply user options if user.config loaded
+  -- 3. Re-apply user options (user.config sets them only inside custom_conf
+  --    on first load; re-applying here keeps edits to M.options live without
+  --    forcing custom_conf replay).
   local user_ok, user_config = pcall(require, "user.config")
   if user_ok and type(user_config) == "table" and user_config.options then
     utils.vim_opts(user_config.options)
   end
 
-  -- Report results
+  -- 4. Re-source every after/plugin/*.lua so telescope/lualine/typescript/etc.
+  --    pick up edits. All LushNvim after/plugin files use augroup clear=true
+  --    and idempotent setup() calls, so re-sourcing is safe.
+  local ok_rt, rt_err = pcall(vim.cmd, "runtime! after/plugin/*.lua")
+  if not ok_rt then
+    table.insert(failed, "after/plugin runtime: " .. tostring(rt_err))
+  end
+
+  -- 5. Bang variant: replay user_config.custom_conf() to re-set colorscheme,
+  --    statusline choice, and re-require user.usercommands. Announces itself
+  --    via the "Here be dragons" greeting — intentional, that's the signal
+  --    that a full replay just happened.
+  if opts.bang and user_ok and type(user_config) == "table"
+      and type(user_config.custom_conf) == "function" then
+    local ok, err = pcall(user_config.custom_conf)
+    if not ok then
+      table.insert(failed, "custom_conf: " .. tostring(err))
+    end
+  end
+
+  -- 6. Polish: clear stale search highlights and dismiss any lingering
+  --    notifications so the reload lands on a clean slate.
+  pcall(vim.cmd, "nohlsearch")
+  local ok_notify, notify = pcall(require, "notify")
+  if ok_notify and type(notify.dismiss) == "function" then
+    pcall(notify.dismiss, { silent = true, pending = true })
+  end
+
+  -- 7. Report.
   if #failed > 0 then
-    utils.notify_error("Failed to reload:\n" .. table.concat(failed, "\n"), "LushReload")
+    utils.notify_error("Reload errors:\n" .. table.concat(failed, "\n"), "LushReload")
+  else
+    local msg = string.format("Cleared %d modules, re-sourced after/plugin", cleared)
+    if opts.bang then msg = msg .. " (with custom_conf replay)" end
+    utils.notify_info(msg, "LushReload")
   end
-  if #reloaded > 0 then
-    utils.notify_info("Reloaded: " .. table.concat(reloaded, ", "), "LushReload")
-  end
-end, { desc = "Hot-reload safe config components (options, keymaps, autocommands)" })
+end, {
+  bang = true,
+  desc = "Hot-reload LushNvim config (bang: also replay custom_conf)",
+})
 
 -- Show current buffer tooling status in a floating window
 create_user_command("LushInfo", function()

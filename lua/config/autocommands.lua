@@ -108,6 +108,13 @@ local function is_sidebar_win(win)
   return vim.bo[buf].buftype == "terminal" or sidebar_filetypes[vim.bo[buf].filetype] or false
 end
 
+-- Shared flag used by layout_guardian to stand down while diff_cleanup is
+-- actively reclaiming windows. Without this, WinClosed events fired during
+-- cleanup can cause ensure_editor_window to create spurious scratch buffers.
+-- Declared here (early) so both layout_guardian and diff_cleanup can close
+-- over it — they are defined at very different points in this file.
+local _cleanup_running = false
+
 -- Find or create a single reusable scratch buffer (prevents [No Name] proliferation)
 local function get_scratch_buf()
   for _, buf in ipairs(vim.api.nvim_list_bufs()) do
@@ -302,7 +309,11 @@ autocmd("BufWinEnter", {
 autocmd("WinClosed", {
   group = augroup("layout_guardian", { clear = true }),
   callback = function()
-    vim.schedule(ensure_editor_window)
+    if _cleanup_running then return end
+    vim.schedule(function()
+      if _cleanup_running then return end
+      ensure_editor_window()
+    end)
   end,
 })
 
@@ -345,9 +356,10 @@ autocmd("QuitPre", {
 
 local _neotree_was_open = false
 local _in_claude_diff = false
-local _diff_bufs = {}       -- {[buf_id] = true} buffers that entered diff mode during a Claude diff
-local _cleanup_timer = nil  -- debounce timer to prevent event storms
-local _pre_diff_bufs = {}   -- {buf_id, buf_id, ...} editor buffers that were open before diff started
+local _diff_bufs = {}        -- {[buf_id] = true} buffers that entered diff mode during a Claude diff
+local _cleanup_timer = nil   -- debounce timer to prevent event storms
+local _pre_diff_bufs = {}    -- {buf_id, buf_id, ...} editor buffers that were open before diff started
+local _watchdog_timer = nil  -- one-shot timer that detects stuck _in_claude_diff state
 
 local function neotree_is_visible()
   local ok, manager = pcall(require, "neo-tree.sources.manager")
@@ -406,6 +418,41 @@ local function focus_claude_terminal()
   return false
 end
 
+-- Clear every bit of diff/layout tracking state. Called by :LushLayoutReset
+-- (user escape hatch) and by the watchdog when it detects stuck state.
+local function reset_diff_state(notify)
+  if _cleanup_timer then pcall(function() _cleanup_timer:stop() end) end
+  _cleanup_timer = nil
+  if _watchdog_timer then pcall(function() _watchdog_timer:stop() end) end
+  _watchdog_timer = nil
+  _in_claude_diff = false
+  _diff_bufs = {}
+  _pre_diff_bufs = {}
+  _neotree_was_open = false
+  _cleanup_running = false
+  if notify then
+    utils.notify_info("Layout state cleared", "LushLayout")
+  end
+end
+
+-- Watchdog: 10 s after a diff starts, if _in_claude_diff is still true but
+-- no windows are in diff mode, the WinClosed/BufEnter safety net missed its
+-- cue and state is stuck. Auto-reset and warn the user. Rearms itself as
+-- long as diff windows are still visible, so long diff sessions are fine.
+local function arm_watchdog()
+  if _watchdog_timer then pcall(function() _watchdog_timer:stop() end) end
+  _watchdog_timer = vim.defer_fn(function()
+    _watchdog_timer = nil
+    if not _in_claude_diff then return end
+    if any_diff_windows() then
+      arm_watchdog()
+      return
+    end
+    utils.notify_warn("Stuck diff state detected — auto-resetting layout", "LushLayout")
+    reset_diff_state(false)
+  end, 10000)
+end
+
 -- Equalize editor windows without disturbing sidebars/terminals: temporarily
 -- set winfixwidth/winfixheight on every sidebar & terminal window so that
 -- wincmd = only affects the editor area, then restore the previous values.
@@ -437,6 +484,9 @@ local function diff_cleanup()
   -- Still in an active diff — don't clean up yet
   if any_diff_windows() then return end
 
+  _cleanup_running = true
+  if _watchdog_timer then pcall(function() _watchdog_timer:stop() end) end
+  _watchdog_timer = nil
   _in_claude_diff = false
   local participant_bufs = _diff_bufs
   _diff_bufs = {}
@@ -549,6 +599,10 @@ local function diff_cleanup()
 
   -- 8. Return focus to Claude terminal
   focus_claude_terminal()
+
+  -- Release the layout_guardian re-entry guard. If an error was raised mid-
+  -- cleanup this never runs; :LushLayoutReset clears it on demand.
+  _cleanup_running = false
 end
 
 local function schedule_diff_cleanup()
@@ -601,6 +655,7 @@ autocmd("OptionSet", {
 
       if not _in_claude_diff then
         _in_claude_diff = true
+        arm_watchdog()
         -- Save which editor buffers were visible before the diff took over,
         -- and collect their windows so we can close them below.
         _pre_diff_bufs = {}
@@ -656,6 +711,14 @@ autocmd("BufEnter", {
     schedule_diff_cleanup()
   end,
 })
+
+-- Escape hatch: if the diff layout system gets stuck (state flags out of sync
+-- with what's on screen), the user can run :LushLayoutReset or hit <leader>uL
+-- to clear all tracking state and land focus on the Claude terminal.
+vim.api.nvim_create_user_command("LushLayoutReset", function()
+  reset_diff_state(true)
+  focus_claude_terminal()
+end, { desc = "Reset diff/layout state (recover from flaky layout)" })
 
 -- ══════════════════════════════════════════════════════════════════════════════
 -- Claude Terminal Auto-Scroll: enter terminal mode when Claude terminal gains

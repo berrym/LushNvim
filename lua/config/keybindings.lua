@@ -222,6 +222,9 @@ map("n", "<leader>uc", "<CMD>LushColors<CR>", { desc = "Colorscheme picker" })
 -- Statusline style picker
 map("n", "<leader>ul", "<CMD>LushStatusline<CR>", { desc = "Statusline picker" })
 
+-- Layout escape hatch (use when Claude diff layout gets stuck / flaky)
+map("n", "<leader>uL", "<CMD>LushLayoutReset<CR>", { desc = "Reset layout state" })
+
 -- Config reload
 map("n", "<leader>ur", "<CMD>LushReload<CR>", { desc = "Reload config (options/keymaps)" })
 
