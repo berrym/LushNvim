@@ -114,7 +114,8 @@ if utils.enabled(group, "telescope") then
     end
 
     -- Build project list, filtering out directories that no longer exist
-    local all_projects = proj_history.get_recent_projects()
+    -- project.nvim new API: pass paths_only=true to get string[] (default returns {path,name} entries)
+    local all_projects = proj_history.get_recent_projects(true)
     local results = {}
     for i = #all_projects, 1, -1 do -- reverse to show most recent first
       if vim.fn.isdirectory(all_projects[i]) == 1 then
