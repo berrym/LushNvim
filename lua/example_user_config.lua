@@ -240,7 +240,6 @@ M.autocommands = {
 M.enable_plugins = {
   aerial = true,
   alpha = true,
-  astrotheme = true,
   autopairs = true,
   autotag = true,
   bufferline = true,
@@ -309,14 +308,6 @@ M.plugins = {
   --   cond = M.enable_plugins.nightfox,
   --   config = function()
   --     require("user.plugin-configs.nightfox")
-  --   end,
-  -- },
-  -- {
-  --   "loctvl842/monokai-pro.nvim",
-  --   lazy = false,
-  --   cond = M.enable_plugins.monokai_pro,
-  --   config = function()
-  --     require("user.plugin-configs.monokai-pro")
   --   end,
   -- },
 }
@@ -416,15 +407,12 @@ M.custom_conf = function()
   -- greeting upon startup
   utils.notify_info("Here be dragons! Fear is the mind killer.", "<== lususnaturae ==>")
 
-  -- set color scheme
-  -- utils.colors("catppuccin-nvim")
-  -- utils.colors("tokyonight")
+  -- set color scheme (any scheme available through :LushColors picker)
+  utils.colors("carbonfox")
   -- utils.colors("nightfox")
-  -- utils.colors("astrotheme")
-  -- utils.colors("astromars")
-  -- utils.colors("monokai-pro")
-  -- utils.colors("monokai-pro-machine")
-  -- utils.colors("monokai-pro-octagon")
+  -- utils.colors("duskfox")
+  -- utils.colors("tokyonight-night")
+  -- utils.colors("catppuccin-nvim")
 
   -- statusline style: lush | evil | fox | tokyonight | catppuccin | minimal | auto
   -- runtime switch with :LushStatusline or <leader>ul (live preview + persist)

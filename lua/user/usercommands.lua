@@ -29,20 +29,6 @@ create_user_command("NightfoxTransparencyOff", function()
   colors("nightfox")
 end, { desc = "Disable transparency" })
 
-create_user_command("MonokaiProTransparencyOn", function()
-  require("monokai-pro").setup({
-    transparent_background = true,
-  })
-  colors("monokai-pro")
-end, { desc = "Enable monokai-pro transparency" })
-
-create_user_command("MonokaiProTransparencyOff", function()
-  require("monokai-pro").setup({
-    transparent_background = false,
-  })
-  colors("monokai-pro")
-end, { desc = "Disable monokai-pro transparency" })
-
 create_user_command("TokyonightTransparencyOn", function()
   require("tokyonight").setup({
     transparent = true,

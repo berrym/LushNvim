@@ -657,11 +657,6 @@ local plugins = {
       require("ufo").setup()
     end,
   },
-  {
-    "AstroNvim/astrotheme",
-    cond = enabled(group, "astrotheme"),
-    lazy = false,
-  },
   { "nvim-lua/plenary.nvim" },
   {
     "DrKJeff16/project.nvim",
