@@ -219,6 +219,9 @@ end
 -- Colorscheme picker
 map("n", "<leader>uc", "<CMD>LushColors<CR>", { desc = "Colorscheme picker" })
 
+-- Statusline style picker
+map("n", "<leader>ul", "<CMD>LushStatusline<CR>", { desc = "Statusline picker" })
+
 -- Config reload
 map("n", "<leader>ur", "<CMD>LushReload<CR>", { desc = "Reload config (options/keymaps)" })
 

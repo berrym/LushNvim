@@ -184,4 +184,14 @@ M.colors = function(scheme)
   vim.cmd.colorscheme(scheme)
 end
 
+-- Statusline style selector. Setting happens in user/config.lua, the after/plugin/lualine.lua
+-- dispatcher reads the stored choice and applies it. Runtime override via :LushStatusline.
+local _statusline_choice = nil
+M.statusline = function(name)
+  _statusline_choice = name
+end
+M.get_statusline = function()
+  return _statusline_choice
+end
+
 return M

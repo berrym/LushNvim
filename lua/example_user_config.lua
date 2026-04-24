@@ -419,6 +419,10 @@ M.custom_conf = function()
   -- utils.colors("monokai-pro-machine")
   -- utils.colors("monokai-pro-octagon")
 
+  -- statusline style: lush | evil | fox | tokyonight | catppuccin | minimal | auto
+  -- runtime switch with :LushStatusline or <leader>ul (live preview + persist)
+  utils.statusline("lush")
+
   -- require("user.usercommands") -- example of using a file for custom usercommands
 end
 
