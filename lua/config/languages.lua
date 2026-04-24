@@ -173,27 +173,103 @@ M.bundles = {
 		enable_plugins = { lazydev = true },
 	},
 	web = {
+		-- Generic web stack (HTML/CSS/JSON). For JS/TS, enable the `typescript` bundle.
 		mason_null_ls = {
-			"typescript-language-server",
 			"html-lsp",
 			"css-lsp",
 			"json-lsp",
 			"prettierd",
-			"eslint_d",
 		},
 		mason_dap = {},
-		treesitter = { "javascript", "typescript", "tsx", "html", "css", "json", "jsdoc" },
+		treesitter = { "html", "css", "scss", "json" },
+		formatting_servers = {
+			"html",
+			"css",
+			"scss",
+			"json",
+			"jsonc",
+			"yaml",
+			"markdown",
+		},
+		lsp_configs = {},
+		enable_plugins = {},
+	},
+	typescript = {
+		-- First-class JS/TS stack: vtsls (VS Code-derived LSP, community standard 2026),
+		-- eslint-lsp for code actions, prettierd for formatting, js-debug-adapter for DAP.
+		mason_null_ls = {
+			"vtsls",
+			"eslint-lsp",
+			"prettierd",
+		},
+		mason_dap = { "js-debug-adapter" },
+		treesitter = { "javascript", "typescript", "tsx", "jsdoc" },
 		formatting_servers = {
 			"javascript",
 			"javascriptreact",
 			"typescript",
 			"typescriptreact",
-			"html",
-			"css",
-			"json",
+			"vue",
+			"svelte",
 		},
-		lsp_configs = {},
-		enable_plugins = {},
+		lsp_configs = {
+			vtsls = {
+				cmd = { "vtsls", "--stdio" },
+				filetypes = {
+					"javascript", "javascriptreact", "javascript.jsx",
+					"typescript", "typescriptreact", "typescript.tsx",
+				},
+				settings = {
+					typescript = {
+						updateImportsOnFileMove = { enabled = "always" },
+						suggest = { completeFunctionCalls = true },
+						inlayHints = {
+							parameterNames = { enabled = "literals" },
+							parameterTypes = { enabled = true },
+							variableTypes = { enabled = true },
+							propertyDeclarationTypes = { enabled = true },
+							functionLikeReturnTypes = { enabled = true },
+							enumMemberValues = { enabled = true },
+						},
+					},
+					javascript = {
+						updateImportsOnFileMove = { enabled = "always" },
+						suggest = { completeFunctionCalls = true },
+						inlayHints = {
+							parameterNames = { enabled = "literals" },
+							variableTypes = { enabled = true },
+							propertyDeclarationTypes = { enabled = true },
+							functionLikeReturnTypes = { enabled = true },
+							enumMemberValues = { enabled = true },
+						},
+					},
+					vtsls = {
+						experimental = {
+							completion = { enableServerSideFuzzyMatch = true },
+						},
+						autoUseWorkspaceTsdk = true,
+					},
+				},
+			},
+			eslint = {
+				cmd = { "vscode-eslint-language-server", "--stdio" },
+				filetypes = {
+					"javascript", "javascriptreact", "javascript.jsx",
+					"typescript", "typescriptreact", "typescript.tsx",
+					"vue", "svelte", "astro",
+				},
+				settings = {
+					workingDirectories = { mode = "auto" },
+					format = false, -- prettierd formats; eslint fixes via code action
+				},
+			},
+		},
+		enable_plugins = {
+			dap_js = true,
+			package_info = true,
+			ts_error_translator = true,
+			template_string = true,
+		},
 	},
 	bash = {
 		mason_null_ls = { "bash-language-server", "shfmt" },

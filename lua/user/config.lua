@@ -8,7 +8,7 @@ local M = {}
 -- Supported: "c", "python", "go", "rust", "lua", "web", "bash", "toml", "yaml",
 --            "ruby", "zig", "docker", "perl", "java"
 -- You can still override individual tables below -- bundles just provide defaults.
--- M.languages = { "c", "python", "go", "rust", "lua", "web", "bash", "toml", "yaml" }
+M.languages = { "c", "python", "go", "rust", "lua", "typescript", "web", "bash", "toml", "yaml" }
 
 -- options put here will override or add on to the default options
 M.options = {
@@ -277,6 +277,11 @@ M.enable_plugins = {
   claudecode = true,
   -- Rust
   rustaceanvim = true,
+  -- JS/TS (auto-enabled by the "typescript" language bundle)
+  dap_js = true,
+  package_info = true,
+  ts_error_translator = true,
+  template_string = true,
 }
 
 -- add extra plugins in here

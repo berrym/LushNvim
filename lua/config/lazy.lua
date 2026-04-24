@@ -90,6 +90,35 @@ local plugins = {
       },
     },
   },
+  -- ── JS/TS ecosystem plugins (gated by `typescript` bundle's enable_plugins) ──
+  {
+    "vuki656/package-info.nvim",
+    cond = enabled(group, "package_info"),
+    dependencies = { "MunifTanjim/nui.nvim" },
+    event = { "BufRead package.json" },
+    opts = {
+      package_manager = "auto",
+      hide_up_to_date = true,
+      hide_unstable_versions = false,
+    },
+  },
+  {
+    "dmmulroy/ts-error-translator.nvim",
+    cond = enabled(group, "ts_error_translator"),
+    ft = { "javascript", "javascriptreact", "typescript", "typescriptreact", "vue", "svelte" },
+    config = true,
+  },
+  {
+    "axelvc/template-string.nvim",
+    cond = enabled(group, "template_string"),
+    ft = { "javascript", "javascriptreact", "typescript", "typescriptreact", "python", "vue", "svelte" },
+    opts = {
+      filetypes = { "javascript", "javascriptreact", "typescript", "typescriptreact", "python", "vue", "svelte" },
+      jsx_brackets = true,
+      remove_template_string = true,
+      restore_quotes = { normal = [["]], jsx = [["]] },
+    },
+  },
   {
     "karb94/neoscroll.nvim",
     cond = enabled(group, "neoscroll"),

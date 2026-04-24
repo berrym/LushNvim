@@ -9,11 +9,13 @@ local M = {}
 
 -- Language bundles: the easiest way to set up language support.
 -- Each bundle auto-configures LSP, formatters, DAP, treesitter, and mason packages.
--- Supported: "c", "python", "go", "rust", "lua", "web", "bash", "toml", "yaml",
---            "ruby", "zig", "docker", "perl", "java"
+-- Supported: "c", "python", "go", "rust", "lua", "typescript", "web", "bash",
+--            "toml", "yaml", "ruby", "zig", "docker", "perl", "java"
 -- Just list the languages you need -- bundles provide sensible defaults.
 -- You can still override any individual table below (manual entries always win).
-M.languages = { "c", "python", "go", "rust", "lua", "web", "bash", "toml", "yaml" }
+-- NOTE: "typescript" gives you first-class JS/TS (vtsls, eslint, js-debug-adapter,
+-- package-info, ts-error-translator, template-string). "web" is for HTML/CSS/JSON.
+M.languages = { "c", "python", "go", "rust", "lua", "typescript", "web", "bash", "toml", "yaml" }
 
 -- options put here will override or add on to the default options
 M.options = {
@@ -275,6 +277,11 @@ M.enable_plugins = {
   zen = true,
   -- Rust
   rustaceanvim = true,
+  -- JS/TS (auto-enabled by the "typescript" language bundle)
+  dap_js = true,
+  package_info = true,
+  ts_error_translator = true,
+  template_string = true,
 }
 
 -- add extra plugins in here
