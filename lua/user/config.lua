@@ -487,7 +487,7 @@ M.custom_conf = function()
 
   -- statusline style: evil | lush | fox | tokyonight | catppuccin | minimal | auto
   -- runtime switch with :LushStatusline or <leader>ul (live preview + persist)
-  utils.statusline("lush")
+  utils.statusline("fox")
 
   require("user.usercommands")
 end

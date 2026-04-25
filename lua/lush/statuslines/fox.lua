@@ -39,8 +39,8 @@ function M.setup()
 			theme = theme,
 			-- Thin angled separators — distinct from tokyonight's solid powerline
 			-- and catppuccin's rounded bubbles. Pairs well with the fox palette.
-			component_separators = { left = "", right = "" },
-			section_separators   = { left = "", right = "" },
+			component_separators = { left = "", right = "" },
+			section_separators   = { left = "", right = "" },
 			globalstatus = true,
 			icons_enabled = true,
 		},
