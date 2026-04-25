@@ -225,11 +225,18 @@ M.safe_close_buffer = function(bufnr)
   pcall(vim.api.nvim_buf_delete, bufnr, { force = true })
 end
 
--- Statusline style selector. Setting happens in user/config.lua, the after/plugin/lualine.lua
--- dispatcher reads the stored choice and applies it. Runtime override via :LushStatusline.
+-- Statusline style selector. Stores the choice and applies it eagerly so the
+-- order of after/plugin/lualine.lua vs custom_conf() doesn't matter — mirrors
+-- how M.colors applies the colorscheme directly. If lualine isn't loaded yet,
+-- styles.apply silently no-ops and after/plugin/lualine.lua picks it up later.
+-- Runtime override via :LushStatusline.
 local _statusline_choice = nil
 M.statusline = function(name)
   _statusline_choice = name
+  local ok, styles = pcall(require, "lush.statuslines")
+  if ok and type(styles.apply) == "function" then
+    pcall(styles.apply, name)
+  end
 end
 M.get_statusline = function()
   return _statusline_choice

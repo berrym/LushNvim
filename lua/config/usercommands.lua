@@ -29,6 +29,16 @@ create_user_command("LushReload", function(opts)
   local cleared = 0
   local failed = {}
 
+  -- 0. Capture the active statusline so we can restore it after module clear.
+  --    Without this, non-bang :LushReload re-sources after/plugin/lualine.lua
+  --    against a fresh config.utils whose _statusline_choice is nil, dropping
+  --    the runtime choice back to the default.
+  local saved_statusline
+  local ok_styles, styles_mod = pcall(require, "lush.statuslines")
+  if ok_styles and type(styles_mod.current) == "function" then
+    saved_statusline = styles_mod.current()
+  end
+
   -- 1. Clear every LushNvim module so `require` re-executes them.
   --    Covers config.*, user.* (plugin-configs, usercommands, etc.) and
   --    the lush.* subtree (statuslines, health).
@@ -70,9 +80,18 @@ create_user_command("LushReload", function(opts)
     utils.vim_opts(user_config.options)
   end
 
-  -- 4. Re-source every after/plugin/*.lua so telescope/lualine/typescript/etc.
-  --    pick up edits. All LushNvim after/plugin files use augroup clear=true
-  --    and idempotent setup() calls, so re-sourcing is safe.
+  -- 4a. Restore the statusline choice into the fresh config.utils module so
+  --     after/plugin/lualine.lua reads the right value when it re-sources.
+  if saved_statusline then
+    local ok_utils, fresh_utils = pcall(require, "config.utils")
+    if ok_utils and type(fresh_utils.statusline) == "function" then
+      pcall(fresh_utils.statusline, saved_statusline)
+    end
+  end
+
+  -- 4b. Re-source every after/plugin/*.lua so telescope/lualine/typescript/etc.
+  --     pick up edits. All LushNvim after/plugin files use augroup clear=true
+  --     and idempotent setup() calls, so re-sourcing is safe.
   local ok_rt, rt_err = pcall(vim.cmd, "runtime! after/plugin/*.lua")
   if not ok_rt then
     table.insert(failed, "after/plugin runtime: " .. tostring(rt_err))
