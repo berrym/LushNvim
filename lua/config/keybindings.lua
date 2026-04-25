@@ -159,7 +159,7 @@ end
 map("n", "<leader>qq", "<CMD>qa<CR>", { desc = "Quit all" })
 map("n", "<leader>qQ", "<CMD>qa!<CR>", { desc = "Quit without saving" })
 map("n", "<leader>qw", "<CMD>close<CR>", { desc = "Close window" })
-map("n", "<leader>qb", "<CMD>bdelete<CR>", { desc = "Close buffer" })
+map("n", "<leader>qb", function() require("config.utils").safe_close_buffer() end, { desc = "Close buffer" })
 map("n", "<leader>qa", "<CMD>wqa<CR>", { desc = "Save all and quit" })
 
 -- ──────────────────────────────────────────────────────────────────────────────

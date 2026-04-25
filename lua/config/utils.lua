@@ -184,6 +184,47 @@ M.colors = function(scheme)
   vim.cmd.colorscheme(scheme)
 end
 
+-- Swap every window showing `bufnr` to a sibling listed buffer first, then
+-- delete. Doing it in this order keeps the editor window alive: vim's own
+-- bdelete-on-active-buffer path closes the window in our IDE layout (1 editor
+-- + neo-tree sidebar), which trips the layout guardian and equalizes the
+-- splits. Pre-swapping avoids that path entirely.
+M.safe_close_buffer = function(bufnr)
+  bufnr = bufnr or vim.api.nvim_get_current_buf()
+  if not vim.api.nvim_buf_is_valid(bufnr) then return end
+
+  local function pick_alt()
+    local alt = vim.fn.bufnr("#")
+    if alt > 0 and alt ~= bufnr
+        and vim.api.nvim_buf_is_valid(alt)
+        and vim.bo[alt].buflisted
+        and vim.bo[alt].buftype == "" then
+      return alt
+    end
+    for _, b in ipairs(vim.api.nvim_list_bufs()) do
+      if b ~= bufnr
+          and vim.api.nvim_buf_is_valid(b)
+          and vim.api.nvim_buf_is_loaded(b)
+          and vim.bo[b].buflisted
+          and vim.bo[b].buftype == "" then
+        return b
+      end
+    end
+    return nil
+  end
+
+  local alt = pick_alt()
+  for _, win in ipairs(vim.api.nvim_list_wins()) do
+    if vim.api.nvim_win_is_valid(win)
+        and vim.api.nvim_win_get_buf(win) == bufnr
+        and alt then
+      vim.api.nvim_win_set_buf(win, alt)
+    end
+  end
+
+  pcall(vim.api.nvim_buf_delete, bufnr, { force = true })
+end
+
 -- Statusline style selector. Setting happens in user/config.lua, the after/plugin/lualine.lua
 -- dispatcher reads the stored choice and applies it. Runtime override via :LushStatusline.
 local _statusline_choice = nil
