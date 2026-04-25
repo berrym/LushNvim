@@ -12,6 +12,8 @@ if utils.enabled(group, "claudecode") then
 		diff_opts = {
 			auto_close_on_accept = true,
 			layout = "vertical",
+			open_in_new_tab = true,
+			hide_terminal_in_new_tab = false,
 		},
 		terminal = {
 			show_native_term_exit_tip = false,
@@ -227,4 +229,43 @@ if utils.enabled(group, "claudecode") then
 
 	-- Expose for keybindings
 	_G.claudecode_set_position = switch_position
+
+	-- New-tab diff: claudecode always opens its terminal as a left/right split in
+	-- the new tab. Reposition it to match _G.claudecode_position (so top/bottom
+	-- preferences are honored) and resize it. Triggered by TabNew + a deferred
+	-- check for a Claude diff buffer in the new tab.
+	vim.api.nvim_create_autocmd("TabNew", {
+		group = vim.api.nvim_create_augroup("LushClaudeDiffTab", { clear = true }),
+		callback = function()
+			vim.defer_fn(function()
+				local tab = vim.api.nvim_get_current_tabpage()
+				if not vim.api.nvim_tabpage_is_valid(tab) then return end
+
+				-- Confirm this tab is hosting a Claude diff (buffer name suffix or marker)
+				local has_claude_diff = false
+				local term_win = nil
+				for _, win in ipairs(vim.api.nvim_tabpage_list_wins(tab)) do
+					local buf = vim.api.nvim_win_get_buf(win)
+					if vim.bo[buf].buftype == "terminal"
+							and vim.api.nvim_buf_get_name(buf):lower():match("claude") then
+						term_win = win
+					end
+					local name = vim.api.nvim_buf_get_name(buf)
+					if name:match("%s%(New%)$") then has_claude_diff = true end
+					local ok, val = pcall(vim.api.nvim_buf_get_var, buf, "claudecode_diff_tab_name")
+					if ok and val ~= nil then has_claude_diff = true end
+				end
+				if not has_claude_diff or not term_win then return end
+
+				-- Reuse same split commands and width math as the original-tab logic
+				local term_buf = vim.api.nvim_win_get_buf(term_win)
+				vim.api.nvim_win_close(term_win, false)
+				vim.cmd(split_for[_G.claudecode_position])
+				vim.api.nvim_win_set_buf(0, term_buf)
+				resize_for_position(0)
+				-- Return focus to the diff so the user can review immediately
+				vim.cmd("wincmd p")
+			end, 60)
+		end,
+	})
 end
