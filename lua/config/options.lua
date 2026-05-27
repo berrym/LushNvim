@@ -12,7 +12,14 @@ vim_opts({
     confirm = true,
     cursorline = true,
     cursorlineopt = "number",
-    expandtab = false,
+    -- Default to soft tabs (4 spaces). Filetypes that need a different width
+    -- are handled per-filetype in autocommands.lua's indent_config. Filetypes
+    -- whose canonical tool enforces hard tabs (e.g. Go's gofmt) flip back to
+    -- `expandtab = false` in their own FileType autocmds.
+    expandtab = true,
+    shiftwidth = 4,
+    softtabstop = 4,
+    tabstop = 4,
     foldenable = true,
     foldmethod = "expr",
     foldexpr = "v:lua.vim.treesitter.foldexpr()",
@@ -28,8 +35,6 @@ vim_opts({
     -- linebreak = true,
     number = true,
     numberwidth = 6,
-    softtabstop = 8,
-    shiftwidth = 8,
     relativenumber = true,
     scrolloff = 8,
     sessionoptions = "blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal,localoptions",
@@ -39,7 +44,6 @@ vim_opts({
     signcolumn = "yes",
     smartcase = true,
     swapfile = false,
-    tabstop = 8,
     textwidth = 100,
     termguicolors = true,
     undofile = true,

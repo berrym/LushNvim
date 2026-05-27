@@ -319,14 +319,14 @@ if enabled(group, "notify") then
   end, { desc = "Dismiss notifications" })
 end
 
--- Colorscheme picker
+-- Colorscheme picker (lowercase uc; snacks.lua moved conceallevel toggle to uC)
 map("n", "<leader>uc", "<CMD>LushColors<CR>", { desc = "Colorscheme picker" })
 
 -- Statusline style picker
 map("n", "<leader>ul", "<CMD>LushStatusline<CR>", { desc = "Statusline picker" })
 
--- Layout escape hatch (use when Claude diff layout gets stuck / flaky)
-map("n", "<leader>uL", "<CMD>LushLayoutReset<CR>", { desc = "Reset layout state" })
+-- Layout escape hatch (moved to uR to free uL for snacks Relative Number toggle)
+map("n", "<leader>uR", "<CMD>LushLayoutReset<CR>", { desc = "Reset layout state" })
 
 -- Config reload
 map("n", "<leader>ur", "<CMD>LushReload<CR>", { desc = "Reload config (options/keymaps)" })

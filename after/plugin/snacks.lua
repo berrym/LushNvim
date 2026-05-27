@@ -11,10 +11,12 @@ if utils.enabled(group, "snacks") then
       { "<leader>us", snacks.toggle.option("spell", { name = "Spelling" }) },
       { "<leader>uw", snacks.toggle.option("wrap", { name = "Wrap" }) },
       { "<leader>uL", snacks.toggle.option("relativenumber", { name = "Relative Number" }) },
+      -- uN because lowercase ul is the LushStatusline picker
+      { "<leader>uN", snacks.toggle.line_number() },
       { "<leader>ud", snacks.toggle.diagnostics() },
-      { "<leader>ul", snacks.toggle.line_number() },
+      -- NOTE: uppercase uC because lowercase uc is the LushColors picker.
       {
-        "<leader>uc",
+        "<leader>uC",
         snacks.toggle.option(
           "conceallevel",
           { off = 0, on = vim.o.conceallevel > 0 and vim.o.conceallevel or 2 }

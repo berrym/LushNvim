@@ -247,7 +247,10 @@ autocmd("BufEnter", {
   end,
 })
 
--- Filetype-specific indentation settings
+-- Filetype-specific indentation overrides. Filetypes whose canonical tool
+-- enforces a specific style (go's gofmt, etc.) are intentionally NOT listed
+-- here — nvim's built-in ftplugins already set the right values for those.
+-- This table exists for filetypes where we want to override vim's defaults.
 local indent_config = {
   [2] = { "lua", "css", "html", "javascript", "typescript", "scss", "xml", "xhtml", "yaml", "ruby" },
   [4] = {
@@ -259,7 +262,6 @@ local indent_config = {
     "proto",
     "python",
     "rust",
-    "go",
     "markdown",
     "md",
     "toml",
