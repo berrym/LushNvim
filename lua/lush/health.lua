@@ -143,6 +143,39 @@ M.check = function()
     end
   end
 
+  -- LushNvim infrastructure
+  h.start("LushNvim Infrastructure")
+  -- Keymap registry
+  if type(_G.lush_tracked_keymaps) == "table" then
+    h.ok(string.format("Keymap registry: %d tracked bindings", #_G.lush_tracked_keymaps))
+  else
+    h.warn("Keymap registry not initialized — :LushReload won't clear stale binds")
+  end
+  -- Option registry
+  if type(_G.lush_tracked_opts) == "table" then
+    h.ok(string.format("Option registry: %d tracked options", vim.tbl_count(_G.lush_tracked_opts)))
+  else
+    h.warn("Option registry not initialized — :LushReload won't reset removed options")
+  end
+  -- Lockfile tracked
+  local lockfile = vim.fn.stdpath("config") .. "/lazy-lock.json"
+  if vim.fn.filereadable(lockfile) == 1 then
+    h.ok("lazy-lock.json present and readable")
+  else
+    h.warn("lazy-lock.json missing — plugin versions will float")
+  end
+  -- after/plugin files for migrated configs
+  local migrated = { "dap", "gitsigns", "notify", "ufo", "snacks", "telescope" }
+  local config_root = vim.fn.stdpath("config")
+  for _, name in ipairs(migrated) do
+    local p = config_root .. "/after/plugin/" .. name .. ".lua"
+    if vim.fn.filereadable(p) == 1 then
+      h.ok("after/plugin/" .. name .. ".lua present")
+    else
+      h.warn("after/plugin/" .. name .. ".lua missing — reload won't pick up changes")
+    end
+  end
+
   -- Language bundles
   if uc.languages and #uc.languages > 0 then
     h.start("Language Bundles")

@@ -302,3 +302,133 @@ create_user_command("LushInfo", function()
   vim.keymap.set("n", "q", "<CMD>close<CR>", { buffer = float_buf, nowait = true })
   vim.keymap.set("n", "<Esc>", "<CMD>close<CR>", { buffer = float_buf, nowait = true })
 end, { desc = "Show current buffer tooling status" })
+
+-- :LushStatus — high-level LushNvim status panel.
+-- Shows config-level state at a glance: active colorscheme/statusline,
+-- enabled feature count, registry sizes, lockfile presence, sub-section
+-- snacks status. Sister of :LushInfo (buffer-specific) and :checkhealth
+-- lush (deep diagnostic).
+create_user_command("LushStatus", function()
+  local utils = require("config.utils")
+  local uc = utils.get_user_config()
+  local lines = {}
+  local function add(s)
+    table.insert(lines, s)
+  end
+  local function section(s)
+    add("")
+    add("─── " .. s .. " ───")
+  end
+
+  add("=== LushStatus ===")
+
+  section("Theme")
+  add("  Colorscheme: " .. (vim.g.colors_name or "(default)"))
+  local ok_styles, styles_mod = pcall(require, "lush.statuslines")
+  if ok_styles and type(styles_mod.current) == "function" then
+    add("  Statusline:  " .. tostring(styles_mod.current() or "(default)"))
+  end
+
+  section("Features")
+  if uc.enable_plugins then
+    local on, off = 0, 0
+    for _, v in pairs(uc.enable_plugins) do
+      if v == false then
+        off = off + 1
+      else
+        on = on + 1
+      end
+    end
+    add(string.format("  enable_plugins: %d on, %d off", on, off))
+  end
+  if uc.languages then
+    add("  Language bundles: " .. table.concat(uc.languages, ", "))
+  end
+
+  section("Reload registries")
+  add(
+    string.format(
+      "  Tracked keymaps: %d",
+      type(_G.lush_tracked_keymaps) == "table" and #_G.lush_tracked_keymaps or 0
+    )
+  )
+  add(
+    string.format(
+      "  Tracked options: %d",
+      type(_G.lush_tracked_opts) == "table" and vim.tbl_count(_G.lush_tracked_opts) or 0
+    )
+  )
+
+  section("snacks.nvim")
+  local ok_snacks, snacks = pcall(require, "snacks")
+  if ok_snacks then
+    -- snacks.config has a metatable; iterate via enable_plugins.snacks_* keys.
+    local enabled_mods = {}
+    if uc.enable_plugins then
+      for k, v in pairs(uc.enable_plugins) do
+        if k:match("^snacks_") and (v == true or v == nil) then
+          local module_name = k:gsub("^snacks_", "")
+          local cfg = snacks.config and snacks.config[module_name]
+          if cfg and cfg.enabled then
+            table.insert(enabled_mods, module_name)
+          end
+        end
+      end
+    end
+    table.sort(enabled_mods)
+    add("  Enabled modules: " .. #enabled_mods)
+    if #enabled_mods > 0 then
+      add("  " .. table.concat(enabled_mods, ", "))
+    end
+  else
+    add("  snacks not loaded")
+  end
+
+  section("LSP / DAP")
+  add("  LSP clients: " .. #vim.lsp.get_clients())
+  local ok_dap, dap = pcall(require, "dap")
+  if ok_dap then
+    local adapters = {}
+    for k in pairs(dap.adapters or {}) do
+      table.insert(adapters, k)
+    end
+    table.sort(adapters)
+    add("  DAP adapters: " .. table.concat(adapters, ", "))
+  end
+
+  add("")
+  add("(:checkhealth lush  for deep diagnostic)")
+
+  -- Display in floating window (same style as LushInfo)
+  local width = 50
+  for _, line in ipairs(lines) do
+    if #line + 4 > width then
+      width = #line + 4
+    end
+  end
+  local height = #lines
+  local float_buf = vim.api.nvim_create_buf(false, true)
+  vim.api.nvim_buf_set_lines(float_buf, 0, -1, false, lines)
+  vim.bo[float_buf].modifiable = false
+  vim.bo[float_buf].bufhidden = "wipe"
+
+  vim.api.nvim_open_win(float_buf, true, {
+    relative = "editor",
+    width = math.min(width, vim.o.columns - 4),
+    height = math.min(height, vim.o.lines - 4),
+    row = math.floor((vim.o.lines - height) / 2),
+    col = math.floor((vim.o.columns - width) / 2),
+    style = "minimal",
+    border = "rounded",
+    title = " LushStatus ",
+    title_pos = "center",
+  })
+
+  vim.keymap.set("n", "q", "<CMD>close<CR>", { buffer = float_buf, nowait = true })
+  vim.keymap.set("n", "<Esc>", "<CMD>close<CR>", { buffer = float_buf, nowait = true })
+end, { desc = "Show LushNvim config-level status panel" })
+
+-- :LushHealth — convenience alias for :checkhealth lush (more discoverable).
+create_user_command("LushHealth", function()
+  vim.cmd("checkhealth lush")
+end, { desc = "Run :checkhealth lush" })
