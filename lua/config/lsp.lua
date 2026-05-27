@@ -143,7 +143,10 @@ if enabled(group, "cmp") then
       },
     },
     sources = {
-      default = { "lsp", "path", "snippets", "buffer", "copilot" },
+      -- "snippets" intentionally absent: no snippet engine is loaded.
+      -- LSP-provided snippets (rust-analyzer, gopls, etc.) flow through
+      -- the "lsp" source and expand via vim.snippet natively.
+      default = { "lsp", "path", "buffer", "copilot" },
       providers = {
         copilot = {
           name = "copilot",
