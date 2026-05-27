@@ -44,10 +44,9 @@ local plugins = {
     end,
   },
   {
-    "smoka7/hop.nvim",
-    version = "*",
-    cond = enabled(group, "hop"),
-    event = "VimEnter",
+    "folke/flash.nvim",
+    cond = enabled(group, "flash"),
+    event = "VeryLazy",
   },
   {
     "HakonHarnes/img-clip.nvim",

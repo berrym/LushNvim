@@ -301,9 +301,22 @@ if enabled(group, "snacks_dashboard") then
   map("n", "<leader>;", function() require("snacks").dashboard() end, { desc = "Dashboard" })
 end
 
--- Hop
-if enabled(group, "hop") then
-  map("n", "<leader>j", "<CMD>HopWord<CR>", { desc = "Hop to word" })
+-- Flash jump motions
+if enabled(group, "flash") then
+  local function flash_jump() require("flash").jump() end
+  local function flash_ts() require("flash").treesitter() end
+  local function flash_remote() require("flash").remote() end
+  local function flash_ts_search() require("flash").treesitter_search() end
+  local function flash_toggle() require("flash").toggle() end
+
+  vim.keymap.set({ "n", "x", "o" }, "s", flash_jump, { desc = "Flash jump" })
+  vim.keymap.set({ "n", "x", "o" }, "S", flash_ts, { desc = "Flash treesitter" })
+  vim.keymap.set("o", "r", flash_remote, { desc = "Remote flash" })
+  vim.keymap.set({ "o", "x" }, "R", flash_ts_search, { desc = "Treesitter search" })
+  vim.keymap.set("c", "<C-s>", flash_toggle, { desc = "Toggle flash search" })
+
+  -- Legacy keymap kept for muscle memory; <leader>j now jumps via flash.
+  map("n", "<leader>j", flash_jump, { desc = "Flash jump (word)" })
 end
 
 -- Snacks scratch buffers
