@@ -50,6 +50,12 @@ create_user_command("LushReload", function(opts)
   --     foo's mappings (instead of leaving stale binds in which-key).
   pcall(utils.clear_tracked_keymaps)
 
+  -- 0c. Reset every option LushNvim set so removed entries from M.options
+  --     in user.config actually disappear on reload (instead of lingering
+  --     until restart). Options not listed will be re-applied by the
+  --     re-source pass right after.
+  pcall(utils.clear_tracked_opts)
+
   -- 1. Clear every LushNvim module so `require` re-executes them.
   --    Covers config.*, user.* (plugin-configs, usercommands, etc.) and
   --    the lush.* subtree (statuslines, health).

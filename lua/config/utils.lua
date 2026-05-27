@@ -5,15 +5,46 @@ M.is_mac = vim.fn.has("macunix") == 1
 M.is_linux = vim.fn.has("unix") == 1 and not M.is_mac
 M.is_windows = vim.fn.has("win32") == 1
 
--- sets main options from options (table)
+-- Option registry — sister of the keymap registry. Tracks every option
+-- LushNvim sets so :LushReload can reset them to defaults before re-applying.
+-- Without this, an option you remove from user.config or M.options would
+-- linger until restart (vim has no "diff from defaults" API).
+_G.lush_tracked_opts = _G.lush_tracked_opts or {}
+
+-- sets main options from options (table), recording each (scope, setting) pair
+-- in the registry so :LushReload can reset removed entries.
 M.vim_opts = function(options)
-  if options ~= nil then
-    for scope, table in pairs(options) do
-      for setting, value in pairs(table) do
-        vim[scope][setting] = value
+  if options == nil then
+    return
+  end
+  for scope, table in pairs(options) do
+    for setting, value in pairs(table) do
+      vim[scope][setting] = value
+      -- Only track scopes that are user-facing (skip wo/bo which are
+      -- window/buffer-local and managed by their own lifecycle).
+      if scope == "o" or scope == "opt" or scope == "go" or scope == "g" then
+        _G.lush_tracked_opts[scope .. ":" .. setting] = true
       end
     end
   end
+end
+
+-- Reset every tracked option to its default. Called by :LushReload before
+-- re-sourcing so removed entries from user.config actually disappear.
+M.clear_tracked_opts = function()
+  for key in pairs(_G.lush_tracked_opts) do
+    local scope, setting = key:match("^([^:]+):(.+)$")
+    if scope == "g" then
+      -- Variables: just unset
+      pcall(function()
+        vim.g[setting] = nil
+      end)
+    elseif scope and setting then
+      -- Options: `:set name&` restores the built-in default.
+      pcall(vim.cmd, "set " .. setting .. "&")
+    end
+  end
+  _G.lush_tracked_opts = {}
 end
 
 -- check if inside a working git repository
