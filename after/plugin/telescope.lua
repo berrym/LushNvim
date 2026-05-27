@@ -6,16 +6,35 @@ if utils.enabled(group, "telescope") then
   telescope.setup({
     defaults = {
       file_ignore_patterns = { "node_modules", ".git/" },
-      -- Rounded corners to match the global winborder = "rounded"
+      -- Rounded corners to match the global winborder = "rounded".
       borderchars = { "─", "│", "─", "│", "╭", "╮", "╯", "╰" },
+      prompt_prefix = "  ",
+      selection_caret = " ",
+      entry_prefix = "  ",
+      sorting_strategy = "ascending", -- entries grow downward; prompt at top
+      layout_strategy = "horizontal",
+      layout_config = {
+        horizontal = {
+          prompt_position = "top",
+          preview_width = 0.55,
+          width = 0.85,
+          height = 0.85,
+        },
+        vertical = {
+          mirror = false,
+        },
+        width = 0.85,
+        height = 0.85,
+        preview_cutoff = 120,
+      },
+      path_display = { "truncate" },
+      winblend = 0,
+      results_title = false,
     },
     pickers = {
-      find_files = {
-        hidden = true,
-      },
-      git_files = {
-        show_untracked = true,
-      },
+      find_files = { hidden = true },
+      git_files = { show_untracked = true },
+      buffers = { sort_lastused = true, ignore_current_buffer = true },
     },
   })
   pcall(function()
