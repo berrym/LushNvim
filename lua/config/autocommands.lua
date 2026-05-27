@@ -286,6 +286,33 @@ autocmd("FileType", {
   end,
 })
 
+-- Format on save (opt-in). Triggers vim.lsp.buf.format on BufWritePre when
+-- the buffer has an LSP client that supports formatting. Default is false in
+-- user.config — flip on if you want surprise-free formatting on every write.
+if utils.enabled(group, "format_on_save") then
+  autocmd("BufWritePre", {
+    desc = "Format buffer via LSP before write",
+    group = augroup("format_on_save", { clear = true }),
+    pattern = "*",
+    callback = function(args)
+      local buf = args.buf
+      -- Skip if no client supports formatting; vim.lsp.buf.format silently
+      -- no-ops in that case, but the explicit check avoids the autocmd
+      -- doing any work for unsupported filetypes.
+      local has_formatter = false
+      for _, client in ipairs(vim.lsp.get_clients({ bufnr = buf })) do
+        if client:supports_method("textDocument/formatting", { bufnr = buf }) then
+          has_formatter = true
+          break
+        end
+      end
+      if has_formatter then
+        pcall(vim.lsp.buf.format, { bufnr = buf, async = false })
+      end
+    end,
+  })
+end
+
 -- Auto-reload buffers when files change externally
 if utils.enabled(group, "auto_reload") then
   local auto_reload_group = augroup("auto_reload", { clear = true })
