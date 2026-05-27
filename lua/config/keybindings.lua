@@ -92,6 +92,12 @@ if enabled(group, "bufferline") then
   map("n", "<leader>bo", "<CMD>BufferLineCloseOthers<CR>", { desc = "Close other buffers" })
   map("n", "<leader>bh", "<CMD>BufferLineCloseLeft<CR>", { desc = "Close buffers to left" })
   map("n", "<leader>bl", "<CMD>BufferLineCloseRight<CR>", { desc = "Close buffers to right" })
+  map("n", "<leader>bP", "<CMD>BufferLineTogglePin<CR>", { desc = "Pin/unpin buffer" })
+  -- Direct buffer jumping by ordinal position (numbers = "ordinal" in bufferline opts)
+  for i = 1, 9 do
+    map("n", "<leader>" .. i, "<CMD>BufferLineGoToBuffer " .. i .. "<CR>",
+      { desc = "Go to buffer " .. i })
+  end
   map("n", "<leader>bW", "<CMD>noautocmd w<CR>", { desc = "Save without formatting" })
 end
 
