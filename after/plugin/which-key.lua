@@ -31,5 +31,7 @@ if utils.enabled(group, "whichkey") then
     { "<leader>aw", group = "+Window", icon = "" },
     { "<leader>r", group = "Rust", icon = "🦀" },
     { "<leader>p", group = "Python", icon = "🐍" },
+    { "<leader>j", group = "JS/TS", icon = "" },
+    { "<leader>W", group = "Web", icon = "󰖟" },
   })
 end
