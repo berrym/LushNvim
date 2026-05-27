@@ -429,6 +429,8 @@ create_user_command("LushStatus", function()
 end, { desc = "Show LushNvim config-level status panel" })
 
 -- :LushHealth — convenience alias for :checkhealth lush (more discoverable).
+-- Opens in a new tab so the active IDE layout (neo-tree + editor + claude
+-- terminal) stays intact in the original tab.
 create_user_command("LushHealth", function()
-  vim.cmd("checkhealth lush")
-end, { desc = "Run :checkhealth lush" })
+  vim.cmd("tab checkhealth lush")
+end, { desc = "Run :checkhealth lush in a new tab" })
