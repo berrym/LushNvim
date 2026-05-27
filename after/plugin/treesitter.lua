@@ -28,7 +28,7 @@ if utils.enabled(group, "treesitter") then
     group = vim.api.nvim_create_augroup("TreesitterHighlight", { clear = true }),
     callback = function(args)
       local ft = vim.bo[args.buf].filetype
-      if ft == "" or ft == "alpha" then return end
+      if ft == "" or ft == "snacks_dashboard" then return end
       local lang = vim.treesitter.language.get_lang(ft)
       if lang and pcall(vim.treesitter.language.inspect, lang) then
         vim.treesitter.start(args.buf, lang)

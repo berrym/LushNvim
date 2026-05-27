@@ -24,11 +24,6 @@ local plugins = {
     cmd = "AerialToggle",
   },
   {
-    "goolord/alpha-nvim",
-    cond = enabled(group, "alpha"),
-    lazy = false,
-  },
-  {
     "akinsho/bufferline.nvim",
     cond = enabled(group, "bufferline"),
     lazy = false,
@@ -728,6 +723,7 @@ local plugins = {
       input      = { enabled = enabled(group, "snacks_input") },
       words      = { enabled = enabled(group, "snacks_words") },
       bufdelete  = { enabled = enabled(group, "snacks_bufdelete") },
+      dashboard  = require("lush.dashboard").opts(enabled(group, "snacks_dashboard")),
       debug      = { enabled = enabled(group, "snacks_debug") },
       git        = { enabled = enabled(group, "snacks_git") },
       gitbrowse  = { enabled = enabled(group, "snacks_gitbrowse") },

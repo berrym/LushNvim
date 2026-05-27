@@ -34,7 +34,6 @@ require("catppuccin").setup({
   default_integrations = true,
   integrations = {
     aerial = true,
-    alpha = true,
     blink_cmp = true,
     lsp_trouble = true,
     gitsigns = true,

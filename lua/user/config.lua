@@ -217,7 +217,6 @@ M.treesitter_ensure_installed = {
 -- take a look at the autocommands file in lua/config for more information
 -- Default value is true if left blank
 M.autocommands = {
-  alpha_folding = true,
   auto_reload = true, -- Auto-reload buffers when files change externally
   autochdir = true,
   claude_code_reload = true, -- Auto-reload buffers when Claude Code edits files
@@ -233,7 +232,6 @@ M.autocommands = {
 -- Default value is true if left blank
 M.enable_plugins = {
   aerial = true,
-  alpha = true,
   autopairs = true,
   autotag = true,
   bufferline = true,
@@ -267,6 +265,7 @@ M.enable_plugins = {
   snacks_input = true,
   snacks_words = true,
   snacks_bufdelete = true,
+  snacks_dashboard = true,
   snacks_debug = true,
   snacks_git = true,
   snacks_gitbrowse = true,

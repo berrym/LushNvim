@@ -13,16 +13,6 @@ autocmd("VimEnter", {
   end,
 })
 
--- disables code folding for the start screen
-if utils.enabled(group, "alpha_folding") then
-  autocmd("FileType", {
-    desc = "Disable folding for alpha buffer",
-    group = augroup("alpha", { clear = true }),
-    pattern = "alpha",
-    command = "setlocal nofoldenable",
-  })
-end
-
 -- Removes any trailing whitespace when saving a file
 if utils.enabled(group, "whitespace_cleanup") then
   autocmd("BufWritePre", {
@@ -325,7 +315,7 @@ autocmd("QuitPre", {
   group = augroup("quit_guardian", { clear = true }),
   callback = function()
     -- Dashboard: user chose quit — let it through
-    if vim.bo.filetype == "alpha" then return end
+    if vim.bo.filetype == "snacks_dashboard" then return end
     -- Terminal buffers: don't intercept terminal close
     if vim.bo.buftype == "terminal" then return end
     -- Scratch/empty unnamed buffer: nothing to protect, let nvim exit

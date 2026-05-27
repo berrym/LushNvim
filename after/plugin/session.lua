@@ -13,7 +13,7 @@ if utils.enabled(group, "session_manager") then
 		},
 		should_save = function()
 			-- Don't save sessions for dashboard, empty buffers, or special buftype-only layouts
-			local dominated_fts = { "alpha", "neo-tree", "" }
+			local dominated_fts = { "snacks_dashboard", "neo-tree", "" }
 			if vim.tbl_contains(dominated_fts, vim.bo.filetype) then return false end
 			-- Must have at least one normal buffer to justify saving
 			for _, buf in ipairs(vim.api.nvim_list_bufs()) do

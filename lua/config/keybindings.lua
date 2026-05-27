@@ -297,8 +297,8 @@ map("n", "<Esc>", function()
 end, { desc = "Clear highlights / dismiss notifications" })
 
 -- Alpha dashboard
-if enabled(group, "alpha") then
-  map("n", "<leader>;", "<CMD>Alpha<CR>", { desc = "Dashboard" })
+if enabled(group, "snacks_dashboard") then
+  map("n", "<leader>;", function() require("snacks").dashboard() end, { desc = "Dashboard" })
 end
 
 -- Hop
