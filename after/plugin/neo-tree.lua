@@ -14,7 +14,7 @@ if utils.enabled(group, "neotree") then
     window = { position = "left" },
     open_files_do_not_replace_types = {
       "terminal",
-      "toggleterm",
+      "snacks_terminal",
       "trouble",
       "qf",
       "gitcommit",
@@ -37,9 +37,9 @@ if utils.enabled(group, "neotree") then
                 local cfg = vim.api.nvim_win_get_config(win)
                 -- Skip floating windows
                 if not cfg.relative or cfg.relative == "" then
-                  -- Detect terminal/toggleterm/claude windows
+                  -- Detect terminal / snacks terminal / claude windows
                   local is_bottom = bt == "terminal"
-                    or ft == "toggleterm"
+                    or ft == "snacks_terminal"
                     or (bt == "terminal" and vim.api.nvim_buf_get_name(buf):match("claude"))
                   if is_bottom then
                     local height = vim.api.nvim_win_get_height(win)

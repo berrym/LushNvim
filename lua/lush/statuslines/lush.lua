@@ -296,7 +296,6 @@ function M.setup()
       "lazy",
       "mason",
       "quickfix",
-      "toggleterm",
       "trouble",
       "aerial",
       "nvim-dap-ui",

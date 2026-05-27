@@ -35,7 +35,6 @@ local categories = {
     "scope",
     "session_manager",
     "telescope",
-    "toggleterm",
     "treesitter",
     "trouble",
     "ufo",

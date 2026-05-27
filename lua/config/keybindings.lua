@@ -287,15 +287,13 @@ map("n", "<leader>tc", "<CMD>tabclose<CR>", { desc = "Close tab" })
 map("n", "<leader>to", "<CMD>tabonly<CR>", { desc = "Close other tabs" })
 map("n", "<leader>tp", "<CMD>tabprevious<CR>", { desc = "Previous tab" })
 
--- Terminal tools
-if enabled(group, "toggleterm") then
-  local git_root = "cd $(git rev-parse --show-toplevel 2>/dev/null) && clear"
-  map(
-    "n",
-    "<leader>tk",
-    "<CMD>TermExec go_back=0 direction=float cmd='" .. git_root .. "&& tokei'<CR>",
-    { desc = "Tokei" }
-  )
+-- Terminal tools (via snacks.terminal — see after/plugin/terminal.lua)
+if enabled(group, "snacks_terminal") then
+  map("n", "<leader>tk", function()
+    require("snacks").terminal.toggle("tokei", {
+      win = { position = "float", border = "rounded", width = 0.85, height = 0.85 },
+    })
+  end, { desc = "Tokei" })
   map("n", "<leader>tb", function()
     require("config.terminal").btop_toggle()
   end, { desc = "Btop" })
@@ -516,16 +514,9 @@ map("t", "<C-j>", "<C-\\><C-n><C-w>j")
 map("t", "<C-k>", "<C-\\><C-n><C-w>k")
 map("t", "<C-l>", "<C-\\><C-n><C-w>l")
 
--- ToggleTerm
-if enabled(group, "toggleterm") then
-  local git_root = "cd $(git rev-parse --show-toplevel 2>/dev/null) && clear"
+-- Terminal-mode <C-\>: leave terminal mode (snacks.terminal toggle is on <C-t>).
+if enabled(group, "snacks_terminal") then
   map("t", "<C-\\>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
-  map(
-    "n",
-    "<C-\\>",
-    "<CMD>ToggleTerm go_back=0 cmd='" .. git_root .. "'<CR>",
-    { desc = "Toggle terminal" }
-  )
 end
 
 -- ══════════════════════════════════════════════════════════════════════════════

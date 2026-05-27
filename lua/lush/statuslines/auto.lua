@@ -34,7 +34,7 @@ function M.setup()
       lualine_y = {},
       lualine_z = {},
     },
-    extensions = { "neo-tree", "lazy", "mason", "quickfix", "toggleterm", "trouble" },
+    extensions = { "neo-tree", "lazy", "mason", "quickfix", "trouble" },
   })
 end
 

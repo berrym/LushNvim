@@ -68,37 +68,9 @@ M.has_words_before = function()
     and vim.api.nvim_buf_get_lines(0, line - 1, line, true)[1]:sub(col, col):match("%s") == nil
 end
 
--- creates floating terminal for toggleterm
-M.create_floating_terminal = function(terminal, cmd)
-  local instance = nil
-  if vim.fn.executable(cmd) == 1 then
-    instance = terminal:new({
-      cmd = cmd,
-      dir = "git_dir",
-      direction = "float",
-      float_opts = {
-        border = "rounded",
-      },
-      on_open = function(term)
-        vim.cmd.startinsert()
-        vim.keymap.set(
-          "n",
-          "q",
-          "<cmd>close<CR>",
-          { buffer = term.bufnr, noremap = true, silent = true }
-        )
-      end,
-    })
-  end
-  -- check if TermExec function exists
-  return function()
-    if vim.fn.executable(cmd) == 1 and instance ~= nil then
-      instance:toggle()
-    else
-      M.notify_error("Command not found: " .. cmd .. ". Ensure it is installed.")
-    end
-  end
-end
+-- Floating tool-terminal helper removed May 2026: replaced by snacks.terminal.
+-- See after/plugin/terminal.lua for the gdu/btop wrappers that now use
+-- Snacks.terminal.toggle(cmd, { win = { position = "float", ... } }).
 
 -- updates all Mason packages
 M.update_mason = function()

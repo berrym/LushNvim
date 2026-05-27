@@ -571,11 +571,6 @@ local plugins = {
     },
   },
   {
-    "akinsho/toggleterm.nvim",
-    cond = enabled(group, "toggleterm"),
-    event = "VeryLazy",
-  },
-  {
     "folke/trouble.nvim",
     cond = enabled(group, "trouble"),
     opts = {},

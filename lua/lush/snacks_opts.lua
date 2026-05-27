@@ -38,6 +38,7 @@ function M.build()
     },
     rename = { enabled = enabled(group, "snacks_rename") },
     scroll = { enabled = enabled(group, "snacks_scroll") },
+    terminal = { enabled = enabled(group, "snacks_terminal") },
     toggle = { enabled = enabled(group, "snacks_toggle") },
     win = { enabled = enabled(group, "snacks_win") },
     zen = { enabled = enabled(group, "snacks_zen") },
