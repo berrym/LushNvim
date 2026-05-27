@@ -30,28 +30,42 @@ if utils.enabled(group, "bufferline") then
         },
       },
       -- Auto-grouping: pinned at front, tests grouped together,
-      -- markdown/docs auto-collapse into a single tab
+      -- markdown/docs auto-collapse into a single tab. Each group's
+      -- separator block gets its own bg + fg so the boundary between
+      -- groups is visually obvious, not just textual.
       groups = {
         options = { toggle_hidden_on_enter = true },
         items = {
-          groups.builtin.pinned:with({ icon = "" }),
+          groups.builtin.pinned:with({
+            name = "pinned",
+            icon = " ", -- pin icon
+            highlight = { fg = "#e5c07b", bold = true },
+          }),
           {
             name = "Tests",
-            icon = "",
+            icon = " ", -- test tube
+            highlight = { fg = "#98c379", italic = true },
             matcher = function(buf)
               return buf.name:match("_spec")
                 or buf.name:match("_test")
                 or buf.name:match("%.test%.")
                 or buf.name:match("%.spec%.")
             end,
+            separator = {
+              style = require("bufferline.groups").separator.tab,
+            },
           },
           {
             name = "Docs",
-            icon = "",
+            icon = " ", -- book
+            highlight = { fg = "#56b6c2", italic = true },
             matcher = function(buf)
-              return buf.name:match("%.md$") or buf.name:match("%.txt$")
+              return buf.name:match("%.md$") or buf.name:match("%.txt$") or buf.name:match("%.rst$")
             end,
             auto_close = true,
+            separator = {
+              style = require("bufferline.groups").separator.tab,
+            },
           },
         },
       },
