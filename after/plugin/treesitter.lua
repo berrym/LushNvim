@@ -99,6 +99,15 @@ if utils.enabled(group, "treesitter") then
   end
 end
 
+-- ts-context-commentstring (independent setup, runs even if treesitter disabled
+-- since it's a sibling helper; the require itself short-circuits if missing).
+do
+  local ok, ctx = pcall(require, "ts_context_commentstring")
+  if ok then
+    ctx.setup({ enable_autocmd = false })
+  end
+end
+
 -- nvim-ts-autotag (independent setup)
 if utils.enabled(group, "autotag") then
   require("nvim-ts-autotag").setup({

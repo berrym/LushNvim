@@ -39,15 +39,12 @@ local plugins = {
       "DiffviewRefresh",
     },
   },
+  -- gitsigns: setup lives in after/plugin/gitsigns.lua so :LushReload picks
+  -- up config changes (lazy's `config = function` runs exactly once at load).
   {
     "lewis6991/gitsigns.nvim",
     cond = enabled(group, "gitsigns"),
     event = "VimEnter",
-    config = function()
-      require("gitsigns").setup({
-        on_attach = require("config.keybindings").gitsigns(),
-      })
-    end,
   },
   {
     "folke/flash.nvim",
@@ -792,17 +789,12 @@ local plugins = {
       end
     end,
   },
+  -- nvim-notify: setup lives in after/plugin/notify.lua so :LushReload picks
+  -- up config changes (lazy's `config = function` runs exactly once at load).
   {
     "rcarriga/nvim-notify",
     cond = enabled(group, "notify"),
     lazy = false,
-    config = function()
-      local notify = require("notify")
-      -- Suppresses the "no background highlight" warning when no terminal bg is set.
-      notify.setup({ background_colour = "#000000" })
-      vim.notify = notify
-      _G.message = notify
-    end,
   },
   {
     "kylechui/nvim-surround",
@@ -824,24 +816,18 @@ local plugins = {
       },
       { "windwp/nvim-ts-autotag", cond = enabled(group, "autotag") },
       { "HiPhish/rainbow-delimiters.nvim", cond = enabled(group, "rainbow") },
-      {
-        "JoosepAlviste/nvim-ts-context-commentstring",
-        config = function()
-          require("ts_context_commentstring").setup({
-            enable_autocmd = false,
-          })
-        end,
-      },
+      -- ts-context-commentstring: setup lives in after/plugin/treesitter.lua
+      -- alongside the rest of treesitter wiring (reload-friendly).
+      { "JoosepAlviste/nvim-ts-context-commentstring" },
     },
   },
+  -- nvim-ufo: setup lives in after/plugin/ufo.lua so :LushReload picks up
+  -- config changes.
   {
     "kevinhwang91/nvim-ufo",
     cond = enabled(group, "ufo"),
     event = "VimEnter",
     dependencies = "kevinhwang91/promise-async",
-    config = function()
-      require("ufo").setup()
-    end,
   },
   { "nvim-lua/plenary.nvim" },
   {

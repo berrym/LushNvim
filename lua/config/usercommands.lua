@@ -89,6 +89,10 @@ create_user_command("LushReload", function(opts)
     table.insert(failed, "after/plugin runtime: " .. tostring(rt_err))
   end
 
+  -- 4c. Restart LSP clients so they pick up changes to lsp_configs in user.config.
+  --     Already-attached clients hold their old config until restarted.
+  pcall(vim.cmd, "LspRestart")
+
   -- 5. Bang variant: replay user_config.custom_conf() to re-set colorscheme,
   --    statusline choice, and re-require user.usercommands. Announces itself
   --    via the "Here be dragons" greeting — intentional, that's the signal
