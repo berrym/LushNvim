@@ -107,6 +107,42 @@ M.check = function()
     end
   end
 
+  -- snacks.nvim modules
+  if uc.enable_plugins and uc.enable_plugins.snacks then
+    h.start("snacks.nvim Modules")
+    local ok_snacks, snacks = pcall(require, "snacks")
+    if not ok_snacks then
+      h.error("snacks.nvim enabled but require failed")
+    else
+      -- Walk every snacks_* flag and check the post-setup config state.
+      -- snacks.config.<module>.enabled tells us whether the module is wired
+      -- up regardless of whether its code has been lazy-loaded yet.
+      local names = {}
+      for k, v in pairs(uc.enable_plugins) do
+        if k:match("^snacks_") then
+          table.insert(names, { name = k, flag_on = v == true or v == nil })
+        end
+      end
+      table.sort(names, function(a, b)
+        return a.name < b.name
+      end)
+      for _, entry in ipairs(names) do
+        local module_name = entry.name:gsub("^snacks_", "")
+        local module_cfg = snacks.config and snacks.config[module_name]
+        local cfg_on = module_cfg and module_cfg.enabled
+        if not entry.flag_on then
+          h.info(entry.name .. " disabled by config")
+        elseif cfg_on then
+          h.ok(entry.name .. " enabled (snacks." .. module_name .. ")")
+        elseif module_cfg ~= nil then
+          h.warn(entry.name .. " enabled in user config but snacks setup did not pick it up")
+        else
+          h.warn(entry.name .. " enabled but snacks." .. module_name .. " module unknown")
+        end
+      end
+    end
+  end
+
   -- Language bundles
   if uc.languages and #uc.languages > 0 then
     h.start("Language Bundles")
