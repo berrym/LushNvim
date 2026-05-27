@@ -152,6 +152,36 @@ if utils.enabled(group, "telescope") then
       items = { { width = 24 }, { width = 16 }, { width = 16 }, { remaining = true } },
     })
 
+    -- Find a non-sidebar editor window in the current tab (i.e. not neo-tree,
+    -- not a floating, not a terminal). Returns nil if none exists.
+    local function find_editor_window()
+      for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+        if vim.api.nvim_win_is_valid(win) then
+          local cfg = vim.api.nvim_win_get_config(win)
+          if not cfg.relative or cfg.relative == "" then
+            local buf = vim.api.nvim_win_get_buf(win)
+            local ft = vim.bo[buf].filetype
+            local bt = vim.bo[buf].buftype
+            if ft ~= "neo-tree" and bt ~= "terminal" then
+              return win
+            end
+          end
+        end
+      end
+      return nil
+    end
+
+    -- Replace the editor window's buffer with a fresh scratch and focus it.
+    -- Called by both fresh-workspace and after-session-restore so the user
+    -- always lands on a clean scratch instead of neo-tree or the last file.
+    local function focus_scratch()
+      local win = find_editor_window()
+      if win then
+        vim.api.nvim_set_current_win(win)
+      end
+      vim.cmd("enew")
+    end
+
     -- Open a project as a clean IDE workspace: scratch buffer + neo-tree, CWD set
     local function open_fresh_workspace(project_dir)
       if project_dir and project_dir ~= "__empty__" then
@@ -161,8 +191,10 @@ if utils.enabled(group, "telescope") then
       vim.cmd("%bdelete!")
       vim.cmd("enew")
       if utils.enabled(group, "neotree") then
-        vim.cmd("Neotree toggle left")
+        vim.cmd("Neotree show left")
       end
+      -- Focus the scratch even if neo-tree grabbed focus when it opened.
+      focus_scratch()
       local name = project_dir and vim.fn.fnamemodify(project_dir, ":t") or "workspace"
       utils.notify_info(name .. " (fresh)", "Project")
     end
@@ -176,6 +208,11 @@ if utils.enabled(group, "telescope") then
         -- PersistedLoadPost autocmd in session.lua handles the notification
         local loaded = pcall(persisted.load)
         if loaded then
+          -- Sessions restore focus to whatever window/buffer was active when
+          -- they were saved. Override with a fresh scratch in the editor area
+          -- so the user always lands on a clean slate, regardless of which
+          -- file was last edited. File buffers remain loaded in the bufferline.
+          focus_scratch()
           return
         end
       end
