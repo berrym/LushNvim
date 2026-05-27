@@ -272,6 +272,7 @@ M.enable_plugins = {
   snacks_debug = true, -- Snacks.debug.inspect/log/backtrace helpers
   snacks_git = true, -- git utilities (browse remote, etc.)
   snacks_gitbrowse = true, -- open current line/file on GitHub/GitLab
+  snacks_lazygit = true, -- floating lazygit with auto-themed colors + nvim-remote
   snacks_indent = true, -- indent guides + scope highlighting (replaces ibl)
   snacks_rename = true, -- rename file + update LSP imports
   snacks_scroll = true, -- smooth cursor scroll (replaces neoscroll)

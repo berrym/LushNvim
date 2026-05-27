@@ -272,6 +272,7 @@ M.enable_plugins = {
   snacks_debug = true,
   snacks_git = true,
   snacks_gitbrowse = true,
+  snacks_lazygit = true,
   snacks_indent = true,
   snacks_rename = true,
   snacks_scroll = true,

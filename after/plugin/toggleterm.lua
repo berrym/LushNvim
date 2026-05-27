@@ -17,10 +17,10 @@ if utils.enabled(group, "toggleterm") then
     },
   })
 
-  -- Create floating terminal toggles (accessible via require("config.terminal"))
+  -- Create floating terminal toggles (accessible via require("config.terminal")).
+  -- lazygit moved to snacks.lazygit (better colorscheme integration + nvim-remote).
   local Terminal = require("toggleterm.terminal").Terminal
   local terminal = {
-    lazygit_toggle = utils.create_floating_terminal(Terminal, "lazygit"),
     gdu_toggle = utils.create_floating_terminal(Terminal, "gdu"),
     btop_toggle = utils.create_floating_terminal(Terminal, "btop"),
   }

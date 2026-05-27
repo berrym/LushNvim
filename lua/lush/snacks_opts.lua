@@ -20,6 +20,7 @@ function M.build()
     debug = { enabled = enabled(group, "snacks_debug") },
     git = { enabled = enabled(group, "snacks_git") },
     gitbrowse = { enabled = enabled(group, "snacks_gitbrowse") },
+    lazygit = { enabled = enabled(group, "snacks_lazygit") },
     indent = {
       enabled = enabled(group, "snacks_indent"),
       indent = {

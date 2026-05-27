@@ -167,10 +167,16 @@ end
 -- ──────────────────────────────────────────────────────────────────────────────
 -- <leader>g: Git  (hunks via gitsigns on_attach)
 -- ──────────────────────────────────────────────────────────────────────────────
-if enabled(group, "toggleterm") then
+if enabled(group, "snacks_lazygit") then
   map("n", "<leader>gg", function()
-    require("config.terminal").lazygit_toggle()
+    require("snacks").lazygit()
   end, { desc = "Lazygit" })
+  map("n", "<leader>gl", function()
+    require("snacks").lazygit.log()
+  end, { desc = "Lazygit log (cwd)" })
+  map("n", "<leader>gL", function()
+    require("snacks").lazygit.log_file()
+  end, { desc = "Lazygit log (current file)" })
 end
 
 if enabled(group, "snacks") then
