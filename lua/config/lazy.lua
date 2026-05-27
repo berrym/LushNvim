@@ -159,11 +159,8 @@ local plugins = {
     "saghen/blink.cmp",
     cond = enabled(group, "cmp"),
     event = "InsertEnter",
-    -- optional: provides snippets for the snippet source
+    -- LSP snippets are handled natively via vim.snippet; no extra engine required.
     dependencies = {
-      { "rafamadriz/friendly-snippets" },
-      { "L3MON4D3/LuaSnip",            version = "v2.*" },
-      { "echasnovski/mini.snippets" },
       {
         "zbirenbaum/copilot.lua",
         cond = enabled(group, "copilot"),

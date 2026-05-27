@@ -69,7 +69,6 @@ M.options = {
 -- function paramater 'b' is shorthand for builtins.
 M.setup_sources = function(b)
   return {
-    -- b.completion.luasnip,
     -- b.completion.tags,
     -- b.formatting.clang_format,
     -- b.formatting.stylua,
