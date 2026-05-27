@@ -163,15 +163,9 @@ _G.lush_features_pick = function()
   local finders = require("telescope.finders")
   local conf = require("telescope.config").values
 
-  -- Track multi-select marks (telescope's own multi-select is awkward for
-  -- our use case; we keep our own set keyed by flag name).
-  local marked = {}
-
   local function entry_display(e)
-    local mark = marked[e.name] and "" or " "
     return string.format(
-      "%s [%-9s] %s %-28s %s",
-      mark,
+      "[%-9s] %s %-28s %s",
       e.category,
       e.on and "" or "",
       e.name,
@@ -202,7 +196,7 @@ _G.lush_features_pick = function()
 
   pickers
     .new({}, {
-      prompt_title = "Features  <CR>=toggle one  <Tab>=mark  <C-a>=apply marks",
+      prompt_title = "Features  <CR>=toggle one  <Tab>=mark  <C-a>=toggle marked",
       finder = finders.new_table({
         results = build_entries(),
         entry_maker = function(e)
@@ -216,43 +210,40 @@ _G.lush_features_pick = function()
       previewer = false,
       sorter = conf.generic_sorter({}),
       attach_mappings = function(prompt_bufnr, mapfn)
-        -- <CR>: toggle just the focused flag and reload.
+        -- <CR>: if any items are multi-selected (via telescope's built-in
+        -- <Tab>), toggle all of them; otherwise toggle just the focused one.
         actions.select_default:replace(function()
-          local selection = action_state.get_selected_entry()
+          local picker = action_state.get_current_picker(prompt_bufnr)
+          local multi = picker and picker:get_multi_selection() or {}
           actions.close(prompt_bufnr)
+          if #multi > 0 then
+            local to_apply = {}
+            for _, sel in ipairs(multi) do
+              table.insert(to_apply, sel.value)
+            end
+            apply_and_reload(to_apply)
+            return
+          end
+          local selection = action_state.get_selected_entry()
           if not selection then
             return
           end
           apply_and_reload({ selection.value })
         end)
 
-        -- <Tab>: mark/unmark current entry, refresh display.
-        local function toggle_mark()
-          local selection = action_state.get_selected_entry()
-          if not selection then
-            return
-          end
-          local name = selection.value.name
-          marked[name] = not marked[name] or nil
-          local picker = action_state.get_current_picker(prompt_bufnr)
-          if picker then
-            picker:refresh(nil, { reset_prompt = false })
-          end
-        end
-        mapfn({ "i", "n" }, "<Tab>", toggle_mark)
-
-        -- <C-a>: apply every marked entry in a single reload pass.
+        -- <C-a>: explicit "apply marks" — same as <CR> when marks exist,
+        -- but errors loudly when no marks are set so the user knows why.
         local function apply_marked()
-          local to_apply = {}
-          for _, e in ipairs(build_entries()) do
-            if marked[e.name] then
-              table.insert(to_apply, e)
-            end
+          local picker = action_state.get_current_picker(prompt_bufnr)
+          local multi = picker and picker:get_multi_selection() or {}
+          if #multi == 0 then
+            utils.notify_info("No marks — <Tab> on flags first, then <CR>", "Features")
+            return
           end
           actions.close(prompt_bufnr)
-          if #to_apply == 0 then
-            utils.notify_info("No marks — press <Tab> on flags first", "Features")
-            return
+          local to_apply = {}
+          for _, sel in ipairs(multi) do
+            table.insert(to_apply, sel.value)
           end
           apply_and_reload(to_apply)
         end
