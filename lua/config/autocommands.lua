@@ -479,6 +479,24 @@ autocmd("QuitPre", {
 -- that marker is gone. So we track diff participant buffers ourselves via
 -- OptionSet and use that list for cleanup instead of relying on the marker.
 
+-- ══════════════════════════════════════════════════════════════════════════════
+-- Claude diff layout safety net
+--
+-- Status as of May 2026: claudecode.nvim is configured with
+-- `diff_opts.open_in_new_tab = true` (see after/plugin/claudecode.lua), so
+-- Claude diffs land in their own tabpage and the IDE layout in the original
+-- tab is bit-perfect throughout the diff. Under that mode this whole system
+-- is largely dormant — _pre_diff_bufs collects nothing, no windows get
+-- closed, no neo-tree reopen happens.
+--
+-- It's kept anyway as insurance: if a future claudecode update changes
+-- defaults or open_in_new_tab is disabled, the same-tab diff flow would
+-- otherwise trash the layout. Audited dead-code by hand; every helper here
+-- is wired into the OptionSet/WinClosed/BufEnter chain below.
+--
+-- :LushLayoutReset / <leader>uR is the user-facing escape hatch.
+-- ══════════════════════════════════════════════════════════════════════════════
+
 local _neotree_was_open = false
 local _in_claude_diff = false
 local _diff_bufs = {} -- {[buf_id] = true} buffers that entered diff mode during a Claude diff
