@@ -73,17 +73,19 @@ end
 -- Category sort order in the picker.
 local category_order = { "Editor", "LSP", "UI", "snacks", "Languages", "DAP", "AI", "Other" }
 
--- Rewrite (or insert) a single flag line in user/config.lua.
-local function persist_flag(name, new_value)
+-- Rewrite (or insert) a single flag line in user/config.lua inside the
+-- specified table ("enable_plugins" or "autocommands").
+local function persist_flag(table_name, name, new_value)
   local config_path = vim.fn.stdpath("config") .. "/lua/user/config.lua"
   local lines = vim.fn.readfile(config_path)
   if not lines or #lines == 0 then
     return nil
   end
   local esc = name:gsub("(%W)", "%%%1")
+  local table_pat = "^%s*M%." .. table_name .. "%s*=%s*{"
   local in_table = false
   for i, line in ipairs(lines) do
-    if line:match("^%s*M%.enable_plugins%s*=%s*{") then
+    if line:match(table_pat) then
       in_table = true
     elseif in_table then
       if line:match("^%s*}%s*$") then
@@ -103,53 +105,50 @@ local function persist_flag(name, new_value)
 end
 
 -- Build entries grouped by category. Each entry carries the flag name,
--- current state, and category so the displayer can show a header glyph.
+-- source table, current state, and category so the displayer can group them.
 local function build_entries()
-  local flags = utils.get_user_config("enable_plugins") or {}
+  local plugin_flags = utils.get_user_config("enable_plugins") or {}
+  local autocmd_flags = utils.get_user_config("autocommands") or {}
   local by_cat = {}
-  for name, v in pairs(flags) do
-    local cat = category_of(name)
+
+  local function add(table_name, name, value)
+    local cat = (table_name == "autocommands") and "Behavior" or category_of(name)
     by_cat[cat] = by_cat[cat] or {}
     table.insert(by_cat[cat], {
       name = name,
-      on = v == true or v == nil,
+      on = value == true or value == nil,
       category = cat,
+      table_name = table_name,
     })
   end
+  for name, v in pairs(plugin_flags) do
+    add("enable_plugins", name, v)
+  end
+  for name, v in pairs(autocmd_flags) do
+    add("autocommands", name, v)
+  end
+
   -- Flatten in category_order; alpha-sort within each.
+  local order = { "Editor", "LSP", "UI", "snacks", "Languages", "DAP", "AI", "Behavior", "Other" }
   local entries = {}
-  for _, cat in ipairs(category_order) do
+  for _, cat in ipairs(order) do
     local list = by_cat[cat]
     if list then
       table.sort(list, function(a, b)
         return a.name < b.name
       end)
       for _, e in ipairs(list) do
-        e.display = string.format(
-          "[%-9s] %s %-28s %s",
-          cat,
-          e.on and "" or "",
-          e.name,
-          e.on and "(on)" or "(off)"
-        )
         table.insert(entries, e)
       end
       by_cat[cat] = nil
     end
   end
-  -- Any unknown category not in category_order
-  for cat, list in pairs(by_cat) do
+  -- Any unknown category not in `order`
+  for _, list in pairs(by_cat) do
     table.sort(list, function(a, b)
       return a.name < b.name
     end)
     for _, e in ipairs(list) do
-      e.display = string.format(
-        "[%-9s] %s %-28s %s",
-        cat,
-        e.on and "" or "",
-        e.name,
-        e.on and "(on)" or "(off)"
-      )
       table.insert(entries, e)
     end
   end
@@ -177,7 +176,7 @@ _G.lush_features_pick = function()
     local applied = 0
     for _, entry in ipairs(entries) do
       local new_value = not entry.on
-      if persist_flag(entry.name, new_value) ~= nil then
+      if persist_flag(entry.table_name, entry.name, new_value) ~= nil then
         applied = applied + 1
       end
     end
