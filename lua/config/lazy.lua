@@ -892,43 +892,17 @@ local plugins = {
   -- snacks.nvim: modern utility plugins collection (additional features, not replacements)
   -- Module opt-in is driven by enable_plugins.snacks_<module> in user/config.lua so
   -- every snacks module follows LushNvim's per-feature enable-flag pattern.
+  -- snacks: opts construction lives in lua/lush/snacks_opts.lua so the
+  -- builder can be re-called on :LushReload to pick up enable_plugins changes.
+  -- after/plugin/snacks.lua re-invokes Snacks.setup() with fresh opts on reload.
   {
     "folke/snacks.nvim",
     cond = enabled(group, "snacks"),
     priority = 1000,
     lazy = false,
-    opts = {
-      bigfile = { enabled = enabled(group, "snacks_bigfile") },
-      quickfile = { enabled = enabled(group, "snacks_quickfile") },
-      input = { enabled = enabled(group, "snacks_input") },
-      words = { enabled = enabled(group, "snacks_words") },
-      bufdelete = { enabled = enabled(group, "snacks_bufdelete") },
-      dashboard = require("lush.dashboard").opts(enabled(group, "snacks_dashboard")),
-      debug = { enabled = enabled(group, "snacks_debug") },
-      git = { enabled = enabled(group, "snacks_git") },
-      gitbrowse = { enabled = enabled(group, "snacks_gitbrowse") },
-      indent = {
-        enabled = enabled(group, "snacks_indent"),
-        indent = {
-          hl = {
-            "RainbowRed",
-            "RainbowGreen",
-            "RainbowOrange",
-            "RainbowBlue",
-            "RainbowYellow",
-            "RainbowViolet",
-            "RainbowCyan",
-          },
-        },
-        scope = { enabled = true },
-      },
-      rename = { enabled = enabled(group, "snacks_rename") },
-      scroll = { enabled = enabled(group, "snacks_scroll") },
-      toggle = { enabled = enabled(group, "snacks_toggle") },
-      win = { enabled = enabled(group, "snacks_win") },
-      zen = { enabled = enabled(group, "snacks_zen") },
-      dim = { enabled = enabled(group, "snacks_zen") },
-    },
+    opts = function()
+      return require("lush.snacks_opts").build()
+    end,
   },
   custom_plugins,
 }
