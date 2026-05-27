@@ -247,26 +247,19 @@ autocmd("BufEnter", {
   end,
 })
 
--- Filetype-specific indentation overrides. Filetypes whose canonical tool
--- enforces a specific style (go's gofmt, etc.) are intentionally NOT listed
--- here — nvim's built-in ftplugins already set the right values for those.
--- This table exists for filetypes where we want to override vim's defaults.
+-- Filetype-specific indentation overrides. Built-in nvim ftplugins handle
+-- many of these for us — entries below are only present when nvim's
+-- ftplugin doesn't set indentation OR we want to override its defaults.
+--
+-- Verified May 2026 against nvim 0.12 runtime/ftplugin:
+--   - python, rust, yaml, markdown: built-in ftplugin already sets indent
+--     (removed from this table, trust the built-in)
+--   - go, makefile, gitcommit, etc.: also handled by built-in ftplugins
+--   - lua, c, cpp, javascript, typescript, html, css: NO built-in indent,
+--     listed here because our project conventions need them
 local indent_config = {
-  [2] = { "lua", "css", "html", "javascript", "typescript", "scss", "xml", "xhtml", "yaml", "ruby" },
-  [4] = {
-    "c",
-    "cpp",
-    "obj",
-    "objcpp",
-    "cuda",
-    "proto",
-    "python",
-    "rust",
-    "markdown",
-    "md",
-    "toml",
-    "java",
-  },
+  [2] = { "lua", "css", "html", "javascript", "typescript", "scss", "xml", "xhtml", "ruby" },
+  [4] = { "c", "cpp", "objc", "objcpp", "cuda", "proto", "toml", "java" },
 }
 
 autocmd("FileType", {
