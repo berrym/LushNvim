@@ -275,14 +275,13 @@ M.enable_plugins = {
   snacks_scroll = true,
   snacks_toggle = true,
   snacks_win = true,
+  snacks_zen = true,
   telescope = true,
   toggleterm = true,
   treesitter = true,
   trouble = true,
-  twilight = true,
   ufo = true,
   whichkey = true,
-  zen = true,
   -- AI Coding Assistant
   claudecode = true,
   -- Rust

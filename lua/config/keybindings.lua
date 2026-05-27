@@ -204,12 +204,10 @@ end
 -- ──────────────────────────────────────────────────────────────────────────────
 -- <leader>u: UI Toggles (core toggles provided by snacks.lua)
 -- ──────────────────────────────────────────────────────────────────────────────
-if enabled(group, "zen") then
-  map("n", "<leader>uz", "<CMD>ZenMode<CR>", { desc = "Toggle zen mode" })
-end
-
-if enabled(group, "twilight") then
-  map("n", "<leader>ut", "<CMD>Twilight<CR>", { desc = "Toggle twilight" })
+if enabled(group, "snacks_zen") then
+  map("n", "<leader>uz", function() require("snacks").zen() end, { desc = "Toggle zen mode" })
+  map("n", "<leader>uZ", function() require("snacks").zen.zoom() end, { desc = "Toggle zen zoom (single window)" })
+  map("n", "<leader>ut", function() require("snacks").dim() end, { desc = "Toggle dim (twilight)" })
 end
 
 if enabled(group, "notify") then

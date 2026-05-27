@@ -691,11 +691,6 @@ local plugins = {
     cmd = { "Trouble" },
   },
   {
-    "folke/twilight.nvim",
-    cond = enabled(group, "twilight"),
-    cmd = { "Twilight", "TwilightEnable", "TwilightDisable" },
-  },
-  {
     "folke/which-key.nvim",
     cond = enabled(group, "whichkey"),
     event = "VeryLazy",
@@ -703,11 +698,6 @@ local plugins = {
   {
     "nvim-lualine/lualine.nvim",
     dependencies = { "nvim-tree/nvim-web-devicons" },
-  },
-  {
-    "folke/zen-mode.nvim",
-    cond = enabled(group, "zen"),
-    cmd = "ZenMode",
   },
   -- claudecode.nvim: Claude Code CLI integration
   {
@@ -760,6 +750,8 @@ local plugins = {
       scroll     = { enabled = enabled(group, "snacks_scroll") },
       toggle     = { enabled = enabled(group, "snacks_toggle") },
       win        = { enabled = enabled(group, "snacks_win") },
+      zen        = { enabled = enabled(group, "snacks_zen") },
+      dim        = { enabled = enabled(group, "snacks_zen") },
     },
   },
   custom_plugins,
