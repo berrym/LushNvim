@@ -60,11 +60,6 @@ local plugins = {
     event = "BufEnter",
   },
   {
-    "lukas-reineke/indent-blankline.nvim",
-    cond = enabled(group, "indent_blankline"),
-    event = "VimEnter",
-  },
-  {
     "neovim/nvim-lspconfig",
     cond = enabled(group, "lsp"),
     event = "VimEnter",
@@ -746,6 +741,21 @@ local plugins = {
       debug      = { enabled = enabled(group, "snacks_debug") },
       git        = { enabled = enabled(group, "snacks_git") },
       gitbrowse  = { enabled = enabled(group, "snacks_gitbrowse") },
+      indent     = {
+        enabled = enabled(group, "snacks_indent"),
+        indent = {
+          hl = {
+            "RainbowRed",
+            "RainbowGreen",
+            "RainbowOrange",
+            "RainbowBlue",
+            "RainbowYellow",
+            "RainbowViolet",
+            "RainbowCyan",
+          },
+        },
+        scope = { enabled = true },
+      },
       rename     = { enabled = enabled(group, "snacks_rename") },
       scroll     = { enabled = enabled(group, "snacks_scroll") },
       toggle     = { enabled = enabled(group, "snacks_toggle") },

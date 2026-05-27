@@ -4,14 +4,6 @@ create_user_command("LushUpdate", function()
   require("config.utils").update_all()
 end, { desc = "Updates plugins, mason packages, treesitter parsers" })
 
-create_user_command("IblRainbowOn", function()
-  require("ibl").setup({ indent = { highlight = _G.ibl_rainbow_highlight } })
-end, { desc = "Enable colored indent markers" })
-
-create_user_command("IblRainbowOff", function()
-  require("ibl").setup()
-end, { desc = "Disable colored indent markers" })
-
 -- Hot-reload LushNvim's own modules and re-source after/plugin/*. `:LushReload!`
 -- (bang) additionally replays `user.config.custom_conf()` — useful when you've
 -- edited the colorscheme / statusline choice in user/config.lua and want the

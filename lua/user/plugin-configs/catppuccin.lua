@@ -39,11 +39,6 @@ require("catppuccin").setup({
     lsp_trouble = true,
     gitsigns = true,
     bufferline = true,
-    indent_blankline = {
-      enabled = true,
-      scope_color = "lavender", -- catppuccin color (eg. `lavender`) default: text
-      colored_indent_levels = true,
-    },
     neotree = true,
     noice = true,
     snacks = true,
