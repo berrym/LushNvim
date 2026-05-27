@@ -602,8 +602,11 @@ local plugins = {
     cond = enabled(group, "notify"),
     lazy = false,
     config = function()
-      vim.notify = require("notify")
-      _G.message = require("notify")
+      local notify = require("notify")
+      -- Suppresses the "no background highlight" warning when no terminal bg is set.
+      notify.setup({ background_colour = "#000000" })
+      vim.notify = notify
+      _G.message = notify
     end,
   },
   {
