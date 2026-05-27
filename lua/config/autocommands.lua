@@ -189,6 +189,36 @@ local function ensure_editor_window()
   _ensuring_editor = false
 end
 
+-- Neo-tree position guard: snap the tree back to vim.g.lush_neotree_position
+-- if it drifts (e.g. an accidental <C-w>L while neo-tree was focused, or a
+-- side-effect from another plugin). The keymaps in keybindings.lua update
+-- vim.g.lush_neotree_position when the user explicitly picks a side, so this
+-- guard never undoes intentional moves.
+autocmd({ "WinNew", "WinClosed", "BufWinEnter" }, {
+  group = augroup("neotree_position_guard", { clear = true }),
+  callback = function()
+    vim.schedule(function()
+      local intended = vim.g.lush_neotree_position or "left"
+      for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+        if vim.api.nvim_win_is_valid(win) then
+          local buf = vim.api.nvim_win_get_buf(win)
+          if vim.bo[buf].filetype == "neo-tree" then
+            local col = vim.api.nvim_win_get_position(win)[2]
+            local total = vim.o.columns
+            local on_left = col == 0
+            local on_right = col > total / 2
+            if (intended == "left" and not on_left) or (intended == "right" and not on_right) then
+              pcall(vim.cmd, "Neotree close")
+              pcall(vim.cmd, "Neotree show " .. intended)
+            end
+            return
+          end
+        end
+      end
+    end)
+  end,
+})
+
 -- Trouble: close and show scratch instead of quitting nvim
 autocmd("BufEnter", {
   group = augroup("TroubleClose", { clear = true }),

@@ -182,8 +182,16 @@ end
 -- ──────────────────────────────────────────────────────────────────────────────
 if enabled(group, "neotree") then
   map("n", "<leader>nn", "<CMD>Neotree toggle current<CR>", { desc = "Toggle fullscreen" })
-  map("n", "<leader>nl", "<CMD>Neotree toggle left<CR>", { desc = "Toggle left" })
-  map("n", "<leader>nr", "<CMD>Neotree toggle right<CR>", { desc = "Toggle right" })
+  -- Explicit left/right also pin the intended position so the guard autocmd
+  -- in autocommands.lua doesn't snap them back.
+  map("n", "<leader>nl", function()
+    vim.g.lush_neotree_position = "left"
+    vim.cmd("Neotree toggle left")
+  end, { desc = "Toggle left" })
+  map("n", "<leader>nr", function()
+    vim.g.lush_neotree_position = "right"
+    vim.cmd("Neotree toggle right")
+  end, { desc = "Toggle right" })
   map("n", "<leader>nf", "<CMD>Neotree reveal float<CR>", { desc = "Toggle float" })
 end
 

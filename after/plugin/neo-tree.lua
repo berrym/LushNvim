@@ -2,11 +2,16 @@ local utils = require("config.utils")
 local group = utils.get_plugin_group()
 
 if utils.enabled(group, "neotree") then
+  -- Persist the user's preferred side. Updated by <leader>nl / <leader>nr
+  -- keybinds; the position guard in autocommands.lua enforces it.
+  vim.g.lush_neotree_position = vim.g.lush_neotree_position or "left"
+
   require("neo-tree").setup({
     close_if_last_window = false,
     popup_border_style = "rounded",
     enable_git_status = true,
     enable_diagnostics = true,
+    window = { position = "left" },
     open_files_do_not_replace_types = {
       "terminal",
       "toggleterm",
