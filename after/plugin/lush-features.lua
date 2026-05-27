@@ -15,6 +15,62 @@ if not utils.enabled(group, "telescope") then
   return
 end
 
+-- Short human-readable descriptions per flag. Anything missing falls back
+-- to a generic "" hint — keep the table small and let truly obvious flags
+-- (e.g. snacks_X — covered by the snacks.nvim cluster docs) stay blank.
+local descriptions = {
+  aerial = "Code outline window",
+  autopairs = "Auto-close () [] {} '' \"\"",
+  autotag = "Auto-close/rename HTML/JSX tags",
+  bufferline = "Tab-style buffer line at the top",
+  claudecode = "Claude Code AI assistant",
+  cmp = "Completion (blink.cmp)",
+  colorizer = "Inline color preview for hex/rgb",
+  context = "Sticky context header (treesitter)",
+  copilot = "GitHub Copilot suggestions",
+  dap = "Debug Adapter Protocol",
+  dap_go = "Go DAP integration (nvim-dap-go)",
+  dap_js = "JS/TS DAP integration (js-debug)",
+  dap_python = "Python DAP integration (debugpy)",
+  diffview = "Side-by-side diff view (:DiffviewOpen)",
+  flash = "Jump motions (s/S) with treesitter labels",
+  gitsigns = "Hunk signs in the gutter",
+  img_clip = "Paste images from clipboard",
+  lazydev = "Lua LSP enrichment for nvim/luvit",
+  lsp = "Language Server Protocol (vim.lsp.config)",
+  lualine = "Statusline framework",
+  neotree = "File explorer sidebar",
+  noice = "Cmdline popup + LSP progress UI",
+  notify = "Floating notifications (nvim-notify)",
+  null_ls = "Formatter/linter aggregator (none-ls)",
+  package_info = "Inline npm package versions",
+  persistent_breakpoints = "Save/restore DAP breakpoints across sessions",
+  project = "Project root detection + recent projects",
+  rainbow = "Rainbow-colored brackets",
+  rustaceanvim = "Rust LSP/debug bundle",
+  schemastore = "JSON schema catalog for jsonls",
+  scope = "Per-tab buffer scoping",
+  session_manager = "Auto save/load sessions (persisted.nvim)",
+  snacks = "Master toggle for the snacks.nvim cluster",
+  telescope = "Fuzzy picker for files/buffers/grep/etc.",
+  template_string = "Auto JS/TS backtick conversion",
+  treesitter = "Syntax-aware highlighting + folds",
+  trouble = "Diagnostics/quickfix tree view",
+  ts_error_translator = "Plain-English TS error messages",
+  ufo = "Fancier code folding (nvim-ufo)",
+  whichkey = "Keymap hint popup",
+  -- M.autocommands
+  auto_reload = "checktime on focus + change notifications",
+  autochdir = "Custom CWD management via vim.fs.root",
+  claude_code_reload = "Aggressive reload for Claude-edited buffers",
+  css_colorizer = "CSS-specific color preview",
+  format_on_save = "BufWritePre → vim.lsp.buf.format",
+  remember_file_state = "Restore cursor/folds via mkview",
+  session_saved_notification = "Toast when persisted saves",
+  treesitter_folds = "Use treesitter for foldexpr",
+  whitespace_cleanup = "Strip trailing whitespace on save",
+}
+
 -- Manual category mapping. Anything not listed falls into "Other".
 local categories = {
   Editor = {
@@ -162,12 +218,14 @@ _G.lush_features_pick = function()
   local conf = require("telescope.config").values
 
   local function entry_display(e)
+    local desc = descriptions[e.name] or ""
     return string.format(
-      "[%-9s] %s %-28s %s",
+      "[%-9s] %s %-28s %-5s %s",
       e.category,
       e.on and "" or "",
       e.name,
-      e.on and "(on)" or "(off)"
+      e.on and "(on)" or "(off)",
+      desc
     )
   end
 
