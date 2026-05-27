@@ -19,14 +19,14 @@ What makes it work as a handoff:
 
 ## Prerequisites
 
-- Neovim v0.10.0+ (latest stable recommended)
+- Neovim v0.11.0+ (uses `vim.lsp.config`, `vim.opt.winborder`, and other 0.11 APIs)
 - `git`, `make`, `pip`, `python3`, `npm`, `node`, `cargo`, `ripgrep`
 - A [Nerd Font](https://www.nerdfonts.com/) for proper icon rendering
 - Resolve `EACCESS` permissions with npm: https://docs.npmjs.com/resolving-eacces-permissions-errors-when-installing-packages-globally
 
 ### Optional
 
-- `lazygit` — integrated git UI via `<leader>gg`
+- `lazygit` — integrated floating git UI via `<leader>gg` (auto-themed to nvim colorscheme)
 - `fd` — faster file finding for Telescope
 - `btop` — process management via `<leader>tb`
 - `gdu` — disk usage analytics via `<leader>tg`
@@ -95,15 +95,26 @@ Both approaches can be combined — use bundles for the base and override specif
 
 ## Health Check and Diagnostics
 
-LushNvim includes built-in diagnostic commands:
+LushNvim includes built-in commands for inspection, configuration, and reload:
 
 | Command | Description |
 |---------|-------------|
-| `:checkhealth lush` | Check nvim version, external tools, mason packages, LSP servers, treesitter parsers |
-| `:LushInfo` | Show current buffer's LSP clients, formatters, linters, DAP adapter, treesitter status |
+| `:checkhealth lush` / `:LushHealth` | Full diagnostic: nvim version, external tools, mason packages, LSP servers, treesitter parsers, snacks modules, registry health |
+| `:LushStatus` | At-a-glance config panel: colorscheme, statusline, enabled features, snacks modules, LSP clients, DAP adapters |
+| `:LushInfo` | Current buffer's LSP clients, formatters, linters, DAP adapter, treesitter status |
+| `:LushFeatures` | Telescope picker to toggle any `enable_plugins` flag with persistence and auto-reload (`<Tab>` to multi-select, `<C-a>` to batch-apply) |
+| `:LushColors` | Live-preview colorscheme picker; selection persists to `user/config.lua` |
+| `:LushStatusline` | Live-preview statusline style picker; selection persists |
 | `:LushUpdate` | Update plugins, mason packages, and treesitter parsers |
-| `:LushInit` | Create user config from example template (first-run) |
-| `:LushReload` | Hot-reload config (options, keybindings, autocommands) |
+| `:LushReload` | Hot-reload config — clears tracked keymaps and options, re-runs after/plugin, restarts LSPs |
+| `:LushLayoutReset` | Escape hatch when a Claude diff layout gets stuck |
+| `:LushInit` | Create `user/config.lua` from the example template (first-run helper) |
+
+`:LushReload` is reload-aware:
+- **Keymap registry** — every keymap LushNvim binds is tracked; on reload they're cleared first so disabled features actually unbind.
+- **Option registry** — same for `vim.opt`; removing an option from `M.options` actually unsets it on reload.
+- **after/plugin re-source** — every plugin's setup is re-run, so config changes take effect without restart.
+- **LSP restart** — already-attached clients pick up new `lsp_configs` automatically.
 
 
 ## Keybindings
@@ -124,7 +135,7 @@ LushNvim uses a mnemonic keybinding system with which-key integration. Press `<l
 | `<leader>q` | Quit | Quit and close operations |
 | `<leader>s` | Session | Session save/load |
 | `<leader>t` | Tab | Tab management |
-| `<leader>u` | UI | UI toggles (spell, wrap, zen, inlay hints) |
+| `<leader>u` | UI | UI toggles + Lush pickers (features, status, health, colors, statusline) |
 | `<leader>w` | Window | Window splits and navigation |
 | `<leader>x` | Diagnostics | Trouble diagnostics |
 
@@ -170,9 +181,24 @@ LushNvim uses a mnemonic keybinding system with which-key integration. Press `<l
 | `<leader>ff` | Find files |
 | `<leader>fg` | Live grep |
 | `<leader>nl` | Neo-tree left |
-| `<leader>gg` | Lazygit |
+| `<leader>gg` | Lazygit (auto-themed) |
+| `<leader>gl` | Lazygit log (cwd) |
+| `<leader>gL` | Lazygit log (current file) |
 | `<leader>xx` | Diagnostics |
 | `<leader>?` | Show keymaps |
+
+### Lush pickers and toggles
+
+| Key | Action |
+|-----|--------|
+| `<leader>uF` | `:LushFeatures` — toggle enable_plugins flags |
+| `<leader>uS` | `:LushStatus` — config status panel |
+| `<leader>uH` | `:LushHealth` — health report (opens in a new tab) |
+| `<leader>uc` | `:LushColors` — colorscheme picker |
+| `<leader>ul` | `:LushStatusline` — statusline style picker |
+| `<leader>ur` | `:LushReload` — hot-reload config |
+| `<leader>uR` | `:LushLayoutReset` — recover from stuck layout |
+| `s` / `S` | Flash jump / treesitter (replaces hop) |
 
 
 ## Basic Usage
@@ -196,23 +222,53 @@ LushNvim uses a mnemonic keybinding system with which-key integration. Press `<l
 ```
 lua/
   config/           Core configuration (do not modify for personal settings)
-    autocommands.lua    Autocommand definitions
-    keybindings.lua     Global keybindings
+    autocommands.lua    Autocommand definitions (layout guardians, format-on-save, etc.)
+    keybindings.lua     Global keybindings (via utils.map for reload-aware tracking)
     languages.lua       Language bundle definitions
-    lazy.lua            Plugin specifications
+    lazy.lua            Plugin specifications (lean — most setup lives in after/plugin/)
     lsp.lua             LSP and completion setup
     options.lua         Default Neovim options
-    usercommands.lua    Built-in user commands (:LushInfo, :LushUpdate, etc.)
-    utils.lua           Utility functions
+    usercommands.lua    :LushInfo, :LushStatus, :LushHealth, :LushReload, etc.
+    utils.lua           Utility functions + keymap/option registries
   user/             Your personal configuration
     config.lua          Main user config (copy from example_user_config.lua)
     usercommands.lua    Custom user commands
     plugin-configs/     Custom plugin configurations
   lush/
-    health.lua          Health check module (:checkhealth lush)
+    health.lua          :checkhealth lush module
+    dashboard.lua       snacks.dashboard config (header, keys, footer)
+    snacks_opts.lua     snacks.nvim opts builder (reload-aware)
+    statuslines/        Lualine style definitions (lush, fox, evil, etc.)
 after/plugin/       Plugin-specific configuration (one file per plugin/feature)
 init.lua            Entry point
 ```
+
+## snacks.nvim cluster
+
+LushNvim leans on `snacks.nvim` (folke) for many features that used to be
+separate plugins. Each snacks module is opt-in via a granular flag:
+
+| Flag | Module | Replaces / Provides |
+|------|--------|---------------------|
+| `snacks_dashboard` | dashboard | Start screen (replaces alpha-nvim) |
+| `snacks_indent` | indent + scope | Indent guides (replaces indent-blankline) |
+| `snacks_scroll` | scroll | Smooth cursor scroll (replaces neoscroll) |
+| `snacks_zen` | zen + dim | Focused mode (replaces zen-mode + twilight) |
+| `snacks_lazygit` | lazygit | Auto-themed floating lazygit |
+| `snacks_notifier` | notifier | (optional) replaces nvim-notify if disabled |
+| `snacks_bigfile` | bigfile | Auto-disable expensive features on huge files |
+| `snacks_quickfile` | quickfile | Fast first-frame render at startup |
+| `snacks_words` | words | Highlight same-word occurrences |
+| `snacks_bufdelete` | bufdelete | Layout-aware `:bdelete` |
+| `snacks_toggle` | toggle | `<leader>u*` toggle infrastructure |
+| `snacks_input` | input | Prettier `vim.ui.input` |
+| `snacks_rename` | rename | LSP-aware file rename |
+| `snacks_gitbrowse` | gitbrowse | Open file/line on GitHub/GitLab |
+| `snacks_git` | git | Misc git helpers |
+| `snacks_debug` | debug | `Snacks.debug.inspect`/`log`/`backtrace` |
+| `snacks_win` | win | Floating-window helper (used by claudecode) |
+
+Toggle any of these with `:LushFeatures` or edit `M.enable_plugins` in `user/config.lua`.
 
 
 ## Copyright
