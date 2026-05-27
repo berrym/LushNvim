@@ -286,6 +286,21 @@ autocmd("FileType", {
   end,
 })
 
+-- Prose-friendly options for markdown / text / help / man buffers. Code
+-- filetypes keep wrap=false (the global default); only prose-y filetypes
+-- get soft-wrap + linebreak so paragraphs flow without breaking mid-word.
+autocmd("FileType", {
+  group = augroup("prose_options", { clear = true }),
+  pattern = { "markdown", "text", "help", "man", "gitcommit" },
+  callback = function()
+    vim.opt_local.wrap = true
+    vim.opt_local.linebreak = true
+    vim.opt_local.breakindent = true
+    -- Don't show character-position colorcolumn for prose.
+    vim.opt_local.colorcolumn = ""
+  end,
+})
+
 -- Format on save (opt-in). Triggers vim.lsp.buf.format on BufWritePre when
 -- the buffer has an LSP client that supports formatting. Default is false in
 -- user.config — flip on if you want surprise-free formatting on every write.
