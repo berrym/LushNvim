@@ -163,7 +163,7 @@ function M.setup()
 		options = {
 			theme = pick_theme(),
 			component_separators = { left = "│", right = "│" },
-			section_separators = { left = "", right = "" },
+			section_separators = { left = "", right = "" },
 			globalstatus = true,
 			icons_enabled = true,
 		},
