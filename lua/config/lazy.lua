@@ -31,7 +31,13 @@ local plugins = {
   {
     "sindrets/diffview.nvim",
     cond = enabled(group, "diffview"),
-    cmd = { "DiffviewOpen", "DiffviewClose", "DiffviewFileHistory", "DiffviewToggleFiles", "DiffviewRefresh" },
+    cmd = {
+      "DiffviewOpen",
+      "DiffviewClose",
+      "DiffviewFileHistory",
+      "DiffviewToggleFiles",
+      "DiffviewRefresh",
+    },
   },
   {
     "lewis6991/gitsigns.nvim",
@@ -107,9 +113,25 @@ local plugins = {
   {
     "axelvc/template-string.nvim",
     cond = enabled(group, "template_string"),
-    ft = { "javascript", "javascriptreact", "typescript", "typescriptreact", "python", "vue", "svelte" },
+    ft = {
+      "javascript",
+      "javascriptreact",
+      "typescript",
+      "typescriptreact",
+      "python",
+      "vue",
+      "svelte",
+    },
     opts = {
-      filetypes = { "javascript", "javascriptreact", "typescript", "typescriptreact", "python", "vue", "svelte" },
+      filetypes = {
+        "javascript",
+        "javascriptreact",
+        "typescript",
+        "typescriptreact",
+        "python",
+        "vue",
+        "svelte",
+      },
       jsx_brackets = true,
       remove_template_string = true,
       restore_quotes = { normal = [["]], jsx = [["]] },
@@ -196,147 +218,286 @@ local plugins = {
     -- keys trigger lazy loading AND define all debug keybindings
     keys = {
       -- Core flow
-      { "<leader>dc", function()
-        local dap = require("dap")
-        if dap.session() then
-          dap.continue()
-        else
-          local configs = dap.configurations[vim.bo.filetype]
-          if not configs or #configs == 0 then
-            vim.notify("No debug config for " .. vim.bo.filetype, vim.log.levels.WARN)
-            return
-          end
-          -- Deep-copy and pre-resolve function values (program path, args)
-          -- BEFORE starting the session. This prevents vim.fn.input() from
-          -- running mid-session-init, which clears breakpoint signs on cold start.
-          local config = vim.deepcopy(configs[1])
-          for k, v in pairs(config) do
-            if type(v) == "function" then
-              config[k] = v()
-              if config[k] == nil or config[k] == "" then return end
+      {
+        "<leader>dc",
+        function()
+          local dap = require("dap")
+          if dap.session() then
+            dap.continue()
+          else
+            local configs = dap.configurations[vim.bo.filetype]
+            if not configs or #configs == 0 then
+              vim.notify("No debug config for " .. vim.bo.filetype, vim.log.levels.WARN)
+              return
             end
-          end
-          dap.run(config)
-        end
-      end, desc = "Continue / Start" },
-      { "<leader>dn", function() require("dap").step_over() end, desc = "Step over" },
-      { "<leader>di", function() require("dap").step_into() end, desc = "Step into" },
-      { "<leader>do", function() require("dap").step_out() end, desc = "Step out" },
-      { "<leader>dp", function() require("dap").pause() end, desc = "Pause" },
-      { "<leader>dC", function() require("dap").run_to_cursor() end, desc = "Run to cursor" },
-      { "<leader>dL", function() require("dap").run_last() end, desc = "Run last" },
-      { "<leader>dr", function() require("dap").restart() end, desc = "Restart" },
-      { "<leader>dt", function()
-        require("dap").terminate({}, {}, function()
-          pcall(function() require("dapui").close() end)
-          -- Close any lingering dap floating windows (hovers/evals)
-          for _, win in ipairs(vim.api.nvim_list_wins()) do
-            local buf = vim.api.nvim_win_get_buf(win)
-            local bt = vim.bo[buf].buftype
-            if vim.api.nvim_win_get_config(win).relative ~= "" and bt == "nofile" then
-              pcall(vim.api.nvim_win_close, win, true)
-            end
-          end
-          -- Restore modifiable on source buffers
-          for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-            if vim.bo[buf].buftype == "" and vim.api.nvim_buf_is_loaded(buf) then
-              vim.bo[buf].modifiable = true
-            end
-          end
-          -- Fallback: event listeners also restore at 500ms, but this
-          -- catches adapters that don't emit terminated/exited events.
-          vim.defer_fn(function()
-            local bp_mod = require("dap.breakpoints")
-            if vim.tbl_count(bp_mod.get()) > 0 then return end
-            -- Use the saved snapshot (set by before.event_initialized listener)
-            local saved = rawget(_G, "_dap_saved_breakpoints")
-            if not saved or vim.tbl_isempty(saved) then return end
-            for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-              local name = vim.api.nvim_buf_get_name(buf)
-              local bps = saved[name]
-              if bps and vim.api.nvim_buf_is_loaded(buf) then
-                for _, bp in ipairs(bps) do
-                  bp_mod.set({
-                    condition = bp.condition,
-                    log_message = bp.logMessage,
-                    hit_condition = bp.hitCondition,
-                  }, buf, bp.line)
+            -- Deep-copy and pre-resolve function values (program path, args)
+            -- BEFORE starting the session. This prevents vim.fn.input() from
+            -- running mid-session-init, which clears breakpoint signs on cold start.
+            local config = vim.deepcopy(configs[1])
+            for k, v in pairs(config) do
+              if type(v) == "function" then
+                config[k] = v()
+                if config[k] == nil or config[k] == "" then
+                  return
                 end
               end
             end
-            rawset(_G, "_dap_saved_breakpoints", nil)
-          end, 2000)
-        end)
-      end, desc = "Terminate" },
-      { "<leader>dq", function()
-        require("dap").disconnect({ terminateDebuggee = true }, function()
-          pcall(function() require("dapui").close() end)
-        end)
-      end, desc = "Disconnect" },
+            dap.run(config)
+          end
+        end,
+        desc = "Continue / Start",
+      },
+      {
+        "<leader>dn",
+        function()
+          require("dap").step_over()
+        end,
+        desc = "Step over",
+      },
+      {
+        "<leader>di",
+        function()
+          require("dap").step_into()
+        end,
+        desc = "Step into",
+      },
+      {
+        "<leader>do",
+        function()
+          require("dap").step_out()
+        end,
+        desc = "Step out",
+      },
+      {
+        "<leader>dp",
+        function()
+          require("dap").pause()
+        end,
+        desc = "Pause",
+      },
+      {
+        "<leader>dC",
+        function()
+          require("dap").run_to_cursor()
+        end,
+        desc = "Run to cursor",
+      },
+      {
+        "<leader>dL",
+        function()
+          require("dap").run_last()
+        end,
+        desc = "Run last",
+      },
+      {
+        "<leader>dr",
+        function()
+          require("dap").restart()
+        end,
+        desc = "Restart",
+      },
+      {
+        "<leader>dt",
+        function()
+          require("dap").terminate({}, {}, function()
+            pcall(function()
+              require("dapui").close()
+            end)
+            -- Close any lingering dap floating windows (hovers/evals)
+            for _, win in ipairs(vim.api.nvim_list_wins()) do
+              local buf = vim.api.nvim_win_get_buf(win)
+              local bt = vim.bo[buf].buftype
+              if vim.api.nvim_win_get_config(win).relative ~= "" and bt == "nofile" then
+                pcall(vim.api.nvim_win_close, win, true)
+              end
+            end
+            -- Restore modifiable on source buffers
+            for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+              if vim.bo[buf].buftype == "" and vim.api.nvim_buf_is_loaded(buf) then
+                vim.bo[buf].modifiable = true
+              end
+            end
+            -- Fallback: event listeners also restore at 500ms, but this
+            -- catches adapters that don't emit terminated/exited events.
+            vim.defer_fn(function()
+              local bp_mod = require("dap.breakpoints")
+              if vim.tbl_count(bp_mod.get()) > 0 then
+                return
+              end
+              -- Use the saved snapshot (set by before.event_initialized listener)
+              local saved = rawget(_G, "_dap_saved_breakpoints")
+              if not saved or vim.tbl_isempty(saved) then
+                return
+              end
+              for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+                local name = vim.api.nvim_buf_get_name(buf)
+                local bps = saved[name]
+                if bps and vim.api.nvim_buf_is_loaded(buf) then
+                  for _, bp in ipairs(bps) do
+                    bp_mod.set({
+                      condition = bp.condition,
+                      log_message = bp.logMessage,
+                      hit_condition = bp.hitCondition,
+                    }, buf, bp.line)
+                  end
+                end
+              end
+              rawset(_G, "_dap_saved_breakpoints", nil)
+            end, 2000)
+          end)
+        end,
+        desc = "Terminate",
+      },
+      {
+        "<leader>dq",
+        function()
+          require("dap").disconnect({ terminateDebuggee = true }, function()
+            pcall(function()
+              require("dapui").close()
+            end)
+          end)
+        end,
+        desc = "Disconnect",
+      },
       -- Breakpoints (routed through persistent-breakpoints when available
       -- so they survive DirChanged reloads and persist across nvim restarts)
-      { "<leader>db", function()
-        local ok, pb = pcall(require, "persistent-breakpoints.api")
-        if ok then pb.toggle_breakpoint() else require("dap").toggle_breakpoint() end
-      end, desc = "Toggle breakpoint" },
-      { "<leader>dB", function()
-        vim.ui.input({ prompt = "Breakpoint condition: " }, function(cond)
-          if cond then
-            require("dap").set_breakpoint(cond)
-            pcall(function() require("persistent-breakpoints.api").breakpoints_changed_in_current_buffer() end)
+      {
+        "<leader>db",
+        function()
+          local ok, pb = pcall(require, "persistent-breakpoints.api")
+          if ok then
+            pb.toggle_breakpoint()
+          else
+            require("dap").toggle_breakpoint()
           end
-        end)
-      end, desc = "Conditional breakpoint" },
-      { "<leader>dl", function()
-        vim.ui.input({ prompt = "Log point message: " }, function(msg)
-          if msg then
-            require("dap").set_breakpoint(nil, nil, msg)
-            pcall(function() require("persistent-breakpoints.api").breakpoints_changed_in_current_buffer() end)
-          end
-        end)
-      end, desc = "Log point" },
-      { "<leader>dx", function()
-        local ok, pb = pcall(require, "persistent-breakpoints.api")
-        if ok then pb.clear_all_breakpoints() else require("dap").clear_breakpoints() end
-      end, desc = "Clear all breakpoints" },
-      -- UI and inspection
-      { "<leader>du", function() require("dapui").toggle() end, desc = "Toggle DAP UI" },
-      { "<leader>de", function() require("dapui").eval() end, desc = "Eval expression" },
-      { "<leader>de", function() require("dapui").eval() end, desc = "Eval selection", mode = "v" },
-      { "<leader>dh", function()
-        -- Toggle: if a hover float is open, close it; otherwise open eval
-        for _, win in ipairs(vim.api.nvim_list_wins()) do
-          if vim.api.nvim_win_get_config(win).relative ~= "" then
-            local buf = vim.api.nvim_win_get_buf(win)
-            if vim.bo[buf].filetype == "dapui_hover" then
-              pcall(vim.api.nvim_win_close, win, true)
-              return
+        end,
+        desc = "Toggle breakpoint",
+      },
+      {
+        "<leader>dB",
+        function()
+          vim.ui.input({ prompt = "Breakpoint condition: " }, function(cond)
+            if cond then
+              require("dap").set_breakpoint(cond)
+              pcall(function()
+                require("persistent-breakpoints.api").breakpoints_changed_in_current_buffer()
+              end)
             end
+          end)
+        end,
+        desc = "Conditional breakpoint",
+      },
+      {
+        "<leader>dl",
+        function()
+          vim.ui.input({ prompt = "Log point message: " }, function(msg)
+            if msg then
+              require("dap").set_breakpoint(nil, nil, msg)
+              pcall(function()
+                require("persistent-breakpoints.api").breakpoints_changed_in_current_buffer()
+              end)
+            end
+          end)
+        end,
+        desc = "Log point",
+      },
+      {
+        "<leader>dx",
+        function()
+          local ok, pb = pcall(require, "persistent-breakpoints.api")
+          if ok then
+            pb.clear_all_breakpoints()
+          else
+            require("dap").clear_breakpoints()
           end
-        end
-        -- Open eval, then defer focus into the float (eval is async)
-        require("dapui").eval()
-        vim.defer_fn(function()
+        end,
+        desc = "Clear all breakpoints",
+      },
+      -- UI and inspection
+      {
+        "<leader>du",
+        function()
+          require("dapui").toggle()
+        end,
+        desc = "Toggle DAP UI",
+      },
+      {
+        "<leader>de",
+        function()
+          require("dapui").eval()
+        end,
+        desc = "Eval expression",
+      },
+      {
+        "<leader>de",
+        function()
+          require("dapui").eval()
+        end,
+        desc = "Eval selection",
+        mode = "v",
+      },
+      {
+        "<leader>dh",
+        function()
+          -- Toggle: if a hover float is open, close it; otherwise open eval
           for _, win in ipairs(vim.api.nvim_list_wins()) do
             if vim.api.nvim_win_get_config(win).relative ~= "" then
               local buf = vim.api.nvim_win_get_buf(win)
               if vim.bo[buf].filetype == "dapui_hover" then
-                vim.api.nvim_set_current_win(win)
+                pcall(vim.api.nvim_win_close, win, true)
                 return
               end
             end
           end
-        end, 100)
-      end, desc = "Hover variable" },
-      { "<leader>dw", function()
-        vim.ui.input({ prompt = "Watch expression: " }, function(expr)
-          if expr then require("dapui").elements.watches.add(expr) end
-        end)
-      end, desc = "Add watch" },
-      { "<leader>dR", function() require("dap").repl.toggle() end, desc = "Toggle REPL" },
+          -- Open eval, then defer focus into the float (eval is async)
+          require("dapui").eval()
+          vim.defer_fn(function()
+            for _, win in ipairs(vim.api.nvim_list_wins()) do
+              if vim.api.nvim_win_get_config(win).relative ~= "" then
+                local buf = vim.api.nvim_win_get_buf(win)
+                if vim.bo[buf].filetype == "dapui_hover" then
+                  vim.api.nvim_set_current_win(win)
+                  return
+                end
+              end
+            end
+          end, 100)
+        end,
+        desc = "Hover variable",
+      },
+      {
+        "<leader>dw",
+        function()
+          vim.ui.input({ prompt = "Watch expression: " }, function(expr)
+            if expr then
+              require("dapui").elements.watches.add(expr)
+            end
+          end)
+        end,
+        desc = "Add watch",
+      },
+      {
+        "<leader>dR",
+        function()
+          require("dap").repl.toggle()
+        end,
+        desc = "Toggle REPL",
+      },
       -- Stack navigation
-      { "<leader>dj", function() require("dap").down() end, desc = "Stack frame down" },
-      { "<leader>dk", function() require("dap").up() end, desc = "Stack frame up" },
+      {
+        "<leader>dj",
+        function()
+          require("dap").down()
+        end,
+        desc = "Stack frame down",
+      },
+      {
+        "<leader>dk",
+        function()
+          require("dap").up()
+        end,
+        desc = "Stack frame up",
+      },
       -- Telescope pickers
       { "<leader>ds", "<CMD>Telescope dap frames<CR>", desc = "Stack frames" },
       { "<leader>dv", "<CMD>Telescope dap variables<CR>", desc = "Variables" },
@@ -353,13 +514,16 @@ local plugins = {
       -- Ensure mason.setup() has run first so its bin/ is on PATH
       -- (nvim-dap config may fire before lsp.lua's mason.setup call)
       -- ══════════════════════════════════════════════════════════════════
-      pcall(function() require("mason").setup() end)
+      pcall(function()
+        require("mason").setup()
+      end)
 
       local ok_mason_dap, mason_dap = pcall(require, "mason-nvim-dap")
       if ok_mason_dap then
         local user_config = utils.get_user_config()
         local sources = user_config.mason_ensure_installed
-            and user_config.mason_ensure_installed.dap or {}
+            and user_config.mason_ensure_installed.dap
+          or {}
         mason_dap.setup({
           ensure_installed = sources,
           automatic_installation = true,
@@ -453,11 +617,26 @@ local plugins = {
       set_dap_highlights()
       vim.api.nvim_create_autocmd("ColorScheme", { callback = set_dap_highlights })
 
-      vim.fn.sign_define("DapBreakpoint", { text = "●", texthl = "DapBreakpoint", numhl = "DapBreakpoint" })
-      vim.fn.sign_define("DapBreakpointCondition", { text = "◉", texthl = "DapBreakpointCondition", numhl = "DapBreakpointCondition" })
-      vim.fn.sign_define("DapLogPoint", { text = "◆", texthl = "DapLogPoint", numhl = "DapLogPoint" })
-      vim.fn.sign_define("DapStopped", { text = "▶", texthl = "DapStopped", linehl = "DapStoppedLine", numhl = "DapStopped" })
-      vim.fn.sign_define("DapBreakpointRejected", { text = "○", texthl = "DapBreakpointRejected", numhl = "DapBreakpointRejected" })
+      vim.fn.sign_define(
+        "DapBreakpoint",
+        { text = "●", texthl = "DapBreakpoint", numhl = "DapBreakpoint" }
+      )
+      vim.fn.sign_define(
+        "DapBreakpointCondition",
+        { text = "◉", texthl = "DapBreakpointCondition", numhl = "DapBreakpointCondition" }
+      )
+      vim.fn.sign_define(
+        "DapLogPoint",
+        { text = "◆", texthl = "DapLogPoint", numhl = "DapLogPoint" }
+      )
+      vim.fn.sign_define(
+        "DapStopped",
+        { text = "▶", texthl = "DapStopped", linehl = "DapStoppedLine", numhl = "DapStopped" }
+      )
+      vim.fn.sign_define(
+        "DapBreakpointRejected",
+        { text = "○", texthl = "DapBreakpointRejected", numhl = "DapBreakpointRejected" }
+      )
 
       -- ══════════════════════════════════════════════════════════════════
       -- [3] DAP UI
@@ -493,9 +672,15 @@ local plugins = {
           },
           render = { indent = 1, max_value_lines = 100 },
         })
-        dap.listeners.after.event_initialized["dapui_config"] = function() dapui.open() end
-        dap.listeners.before.event_terminated["dapui_config"] = function() dapui.close() end
-        dap.listeners.before.event_exited["dapui_config"] = function() dapui.close() end
+        dap.listeners.after.event_initialized["dapui_config"] = function()
+          dapui.open()
+        end
+        dap.listeners.before.event_terminated["dapui_config"] = function()
+          dapui.close()
+        end
+        dap.listeners.before.event_exited["dapui_config"] = function()
+          dapui.close()
+        end
       end
 
       -- Re-send breakpoints after session fully initializes.
@@ -504,7 +689,9 @@ local plugins = {
       dap.listeners.after.event_initialized["reapply_breakpoints"] = function()
         vim.defer_fn(function()
           local session = dap.session()
-          if not session then return end
+          if not session then
+            return
+          end
           local bps = require("dap.breakpoints").get()
           if vim.tbl_count(bps) > 0 then
             session:set_breakpoints(bps)
@@ -528,9 +715,13 @@ local plugins = {
       end
       local function restore_breakpoints_if_missing()
         local saved = rawget(_G, "_dap_saved_breakpoints")
-        if not saved or vim.tbl_isempty(saved) then return end
+        if not saved or vim.tbl_isempty(saved) then
+          return
+        end
         local bp_mod = require("dap.breakpoints")
-        if vim.tbl_count(bp_mod.get()) > 0 then return end
+        if vim.tbl_count(bp_mod.get()) > 0 then
+          return
+        end
         for _, buf in ipairs(vim.api.nvim_list_bufs()) do
           local name = vim.api.nvim_buf_get_name(buf)
           local bps = saved[name]
@@ -565,7 +756,9 @@ local plugins = {
           show_stop_reason = true,
           only_first_definition = true,
           display_callback = function(variable, buf, stackframe, node, options)
-            if not buf or not stackframe or not node then return nil end
+            if not buf or not stackframe or not node then
+              return nil
+            end
             if options.virt_text_pos == "inline" then
               return " = " .. variable.value:gsub("%s+", " ")
             else
@@ -593,7 +786,9 @@ local plugins = {
       -- [6] Telescope DAP
       -- ══════════════════════════════════════════════════════════════════
       if utils.enabled(pgroup, "telescope") then
-        pcall(function() require("telescope").load_extension("dap") end)
+        pcall(function()
+          require("telescope").load_extension("dap")
+        end)
       end
     end,
   },
@@ -627,8 +822,8 @@ local plugins = {
         "nvim-treesitter/nvim-treesitter-context",
         cond = enabled(group, "context"),
       },
-      { "windwp/nvim-ts-autotag",                     cond = enabled(group, "autotag") },
-      { "HiPhish/rainbow-delimiters.nvim",            cond = enabled(group, "rainbow") },
+      { "windwp/nvim-ts-autotag", cond = enabled(group, "autotag") },
+      { "HiPhish/rainbow-delimiters.nvim", cond = enabled(group, "rainbow") },
       {
         "JoosepAlviste/nvim-ts-context-commentstring",
         config = function()
@@ -717,16 +912,16 @@ local plugins = {
     priority = 1000,
     lazy = false,
     opts = {
-      bigfile    = { enabled = enabled(group, "snacks_bigfile") },
-      quickfile  = { enabled = enabled(group, "snacks_quickfile") },
-      input      = { enabled = enabled(group, "snacks_input") },
-      words      = { enabled = enabled(group, "snacks_words") },
-      bufdelete  = { enabled = enabled(group, "snacks_bufdelete") },
-      dashboard  = require("lush.dashboard").opts(enabled(group, "snacks_dashboard")),
-      debug      = { enabled = enabled(group, "snacks_debug") },
-      git        = { enabled = enabled(group, "snacks_git") },
-      gitbrowse  = { enabled = enabled(group, "snacks_gitbrowse") },
-      indent     = {
+      bigfile = { enabled = enabled(group, "snacks_bigfile") },
+      quickfile = { enabled = enabled(group, "snacks_quickfile") },
+      input = { enabled = enabled(group, "snacks_input") },
+      words = { enabled = enabled(group, "snacks_words") },
+      bufdelete = { enabled = enabled(group, "snacks_bufdelete") },
+      dashboard = require("lush.dashboard").opts(enabled(group, "snacks_dashboard")),
+      debug = { enabled = enabled(group, "snacks_debug") },
+      git = { enabled = enabled(group, "snacks_git") },
+      gitbrowse = { enabled = enabled(group, "snacks_gitbrowse") },
+      indent = {
         enabled = enabled(group, "snacks_indent"),
         indent = {
           hl = {
@@ -741,12 +936,12 @@ local plugins = {
         },
         scope = { enabled = true },
       },
-      rename     = { enabled = enabled(group, "snacks_rename") },
-      scroll     = { enabled = enabled(group, "snacks_scroll") },
-      toggle     = { enabled = enabled(group, "snacks_toggle") },
-      win        = { enabled = enabled(group, "snacks_win") },
-      zen        = { enabled = enabled(group, "snacks_zen") },
-      dim        = { enabled = enabled(group, "snacks_zen") },
+      rename = { enabled = enabled(group, "snacks_rename") },
+      scroll = { enabled = enabled(group, "snacks_scroll") },
+      toggle = { enabled = enabled(group, "snacks_toggle") },
+      win = { enabled = enabled(group, "snacks_win") },
+      zen = { enabled = enabled(group, "snacks_zen") },
+      dim = { enabled = enabled(group, "snacks_zen") },
     },
   },
   custom_plugins,

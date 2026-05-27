@@ -34,7 +34,7 @@ end
 M.has_words_before = function()
   local line, col = table.unpack(vim.api.nvim_win_get_cursor(0))
   return col ~= 0
-      and vim.api.nvim_buf_get_lines(0, line - 1, line, true)[1]:sub(col, col):match("%s") == nil
+    and vim.api.nvim_buf_get_lines(0, line - 1, line, true)[1]:sub(col, col):match("%s") == nil
 end
 
 -- creates floating terminal for toggleterm
@@ -50,7 +50,12 @@ M.create_floating_terminal = function(terminal, cmd)
       },
       on_open = function(term)
         vim.cmd.startinsert()
-        vim.keymap.set("n", "q", "<cmd>close<CR>", { buffer = term.bufnr, noremap = true, silent = true })
+        vim.keymap.set(
+          "n",
+          "q",
+          "<cmd>close<CR>",
+          { buffer = term.bufnr, noremap = true, silent = true }
+        )
       end,
     })
   end
@@ -191,22 +196,29 @@ end
 -- splits. Pre-swapping avoids that path entirely.
 M.safe_close_buffer = function(bufnr)
   bufnr = bufnr or vim.api.nvim_get_current_buf()
-  if not vim.api.nvim_buf_is_valid(bufnr) then return end
+  if not vim.api.nvim_buf_is_valid(bufnr) then
+    return
+  end
 
   local function pick_alt()
     local alt = vim.fn.bufnr("#")
-    if alt > 0 and alt ~= bufnr
-        and vim.api.nvim_buf_is_valid(alt)
-        and vim.bo[alt].buflisted
-        and vim.bo[alt].buftype == "" then
+    if
+      alt > 0
+      and alt ~= bufnr
+      and vim.api.nvim_buf_is_valid(alt)
+      and vim.bo[alt].buflisted
+      and vim.bo[alt].buftype == ""
+    then
       return alt
     end
     for _, b in ipairs(vim.api.nvim_list_bufs()) do
-      if b ~= bufnr
-          and vim.api.nvim_buf_is_valid(b)
-          and vim.api.nvim_buf_is_loaded(b)
-          and vim.bo[b].buflisted
-          and vim.bo[b].buftype == "" then
+      if
+        b ~= bufnr
+        and vim.api.nvim_buf_is_valid(b)
+        and vim.api.nvim_buf_is_loaded(b)
+        and vim.bo[b].buflisted
+        and vim.bo[b].buftype == ""
+      then
         return b
       end
     end
@@ -215,9 +227,7 @@ M.safe_close_buffer = function(bufnr)
 
   local alt = pick_alt()
   for _, win in ipairs(vim.api.nvim_list_wins()) do
-    if vim.api.nvim_win_is_valid(win)
-        and vim.api.nvim_win_get_buf(win) == bufnr
-        and alt then
+    if vim.api.nvim_win_is_valid(win) and vim.api.nvim_win_get_buf(win) == bufnr and alt then
       vim.api.nvim_win_set_buf(win, alt)
     end
   end

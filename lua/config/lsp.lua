@@ -14,7 +14,9 @@ if enabled(group, "lsp") then
   -- Apply per-server user configs (with blink.cmp capabilities merged)
   if type(configs) == "table" then
     for server_name, config in pairs(configs) do
-      local capabilities = ok_blink and blink.get_lsp_capabilities(config.capabilities) or config.capabilities or {}
+      local capabilities = ok_blink and blink.get_lsp_capabilities(config.capabilities)
+        or config.capabilities
+        or {}
       local lsp_config = vim.tbl_deep_extend("force", config, { capabilities = capabilities })
       vim.lsp.config(server_name, lsp_config)
     end
@@ -42,17 +44,56 @@ if enabled(group, "lsp") then
       vim.keymap.set("n", "gs", vim.lsp.buf.signature_help, opts)
       -- Function key bindings
       vim.keymap.set("n", "<F2>", vim.lsp.buf.rename, opts)
-      vim.keymap.set({ "n", "x" }, "<F3>", function() vim.lsp.buf.format({ async = true }) end, opts)
+      vim.keymap.set({ "n", "x" }, "<F3>", function()
+        vim.lsp.buf.format({ async = true })
+      end, opts)
       vim.keymap.set("n", "<F4>", vim.lsp.buf.code_action, opts)
       -- Leader Code bindings (<leader>c)
-      vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, { buffer = event.buf, desc = "Code action" })
-      vim.keymap.set("n", "<leader>cr", vim.lsp.buf.rename, { buffer = event.buf, desc = "Rename symbol" })
-      vim.keymap.set("n", "<leader>cd", vim.lsp.buf.definition, { buffer = event.buf, desc = "Go to definition" })
-      vim.keymap.set("n", "<leader>cD", vim.lsp.buf.declaration, { buffer = event.buf, desc = "Go to declaration" })
-      vim.keymap.set("n", "<leader>ci", vim.lsp.buf.implementation, { buffer = event.buf, desc = "Go to implementation" })
-      vim.keymap.set("n", "<leader>cR", "<cmd>Telescope lsp_references<cr>", { buffer = event.buf, desc = "Find references" })
-      vim.keymap.set({ "n", "x" }, "<leader>cf", function() vim.lsp.buf.format({ async = true }) end, { buffer = event.buf, desc = "Format" })
-      vim.keymap.set("n", "<leader>ch", vim.lsp.buf.signature_help, { buffer = event.buf, desc = "Signature help" })
+      vim.keymap.set(
+        "n",
+        "<leader>ca",
+        vim.lsp.buf.code_action,
+        { buffer = event.buf, desc = "Code action" }
+      )
+      vim.keymap.set(
+        "n",
+        "<leader>cr",
+        vim.lsp.buf.rename,
+        { buffer = event.buf, desc = "Rename symbol" }
+      )
+      vim.keymap.set(
+        "n",
+        "<leader>cd",
+        vim.lsp.buf.definition,
+        { buffer = event.buf, desc = "Go to definition" }
+      )
+      vim.keymap.set(
+        "n",
+        "<leader>cD",
+        vim.lsp.buf.declaration,
+        { buffer = event.buf, desc = "Go to declaration" }
+      )
+      vim.keymap.set(
+        "n",
+        "<leader>ci",
+        vim.lsp.buf.implementation,
+        { buffer = event.buf, desc = "Go to implementation" }
+      )
+      vim.keymap.set(
+        "n",
+        "<leader>cR",
+        "<cmd>Telescope lsp_references<cr>",
+        { buffer = event.buf, desc = "Find references" }
+      )
+      vim.keymap.set({ "n", "x" }, "<leader>cf", function()
+        vim.lsp.buf.format({ async = true })
+      end, { buffer = event.buf, desc = "Format" })
+      vim.keymap.set(
+        "n",
+        "<leader>ch",
+        vim.lsp.buf.signature_help,
+        { buffer = event.buf, desc = "Signature help" }
+      )
     end,
   })
 

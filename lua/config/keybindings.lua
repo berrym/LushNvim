@@ -74,10 +74,18 @@ if enabled(group, "claudecode") then
   map("n", "<leader>ada", "<CMD>ClaudeCodeDiffAccept<CR>", { desc = "Accept diff" })
   map("n", "<leader>add", "<CMD>ClaudeCodeDiffDeny<CR>", { desc = "Deny diff" })
   -- +Position subgroup (uses snacks_win_opts for top/bottom support)
-  map("n", "<leader>awl", function() _G.claudecode_set_position("left") end, { desc = "Window left" })
-  map("n", "<leader>awr", function() _G.claudecode_set_position("right") end, { desc = "Window right" })
-  map("n", "<leader>awt", function() _G.claudecode_set_position("top") end, { desc = "Window top" })
-  map("n", "<leader>awb", function() _G.claudecode_set_position("bottom") end, { desc = "Window bottom" })
+  map("n", "<leader>awl", function()
+    _G.claudecode_set_position("left")
+  end, { desc = "Window left" })
+  map("n", "<leader>awr", function()
+    _G.claudecode_set_position("right")
+  end, { desc = "Window right" })
+  map("n", "<leader>awt", function()
+    _G.claudecode_set_position("top")
+  end, { desc = "Window top" })
+  map("n", "<leader>awb", function()
+    _G.claudecode_set_position("bottom")
+  end, { desc = "Window bottom" })
 end
 
 -- ──────────────────────────────────────────────────────────────────────────────
@@ -95,14 +103,20 @@ if enabled(group, "bufferline") then
   map("n", "<leader>bP", "<CMD>BufferLineTogglePin<CR>", { desc = "Pin/unpin buffer" })
   -- Direct buffer jumping by ordinal position (numbers = "ordinal" in bufferline opts)
   for i = 1, 9 do
-    map("n", "<leader>" .. i, "<CMD>BufferLineGoToBuffer " .. i .. "<CR>",
-      { desc = "Go to buffer " .. i })
+    map(
+      "n",
+      "<leader>" .. i,
+      "<CMD>BufferLineGoToBuffer " .. i .. "<CR>",
+      { desc = "Go to buffer " .. i }
+    )
   end
   map("n", "<leader>bW", "<CMD>noautocmd w<CR>", { desc = "Save without formatting" })
 end
 
 if enabled(group, "snacks") then
-  map("n", "<leader>bd", function() require("snacks").bufdelete() end, { desc = "Delete buffer" })
+  map("n", "<leader>bd", function()
+    require("snacks").bufdelete()
+  end, { desc = "Delete buffer" })
 end
 
 -- Buffer reload (always available)
@@ -113,8 +127,18 @@ map("n", "<leader>bR", "<CMD>e!<CR>", { desc = "Force reload (discard changes)" 
 -- <leader>c: Code/LSP  (LSP bindings added in lsp.lua LspAttach)
 -- ──────────────────────────────────────────────────────────────────────────────
 if enabled(group, "trouble") then
-  map("n", "<leader>cs", "<cmd>Trouble symbols toggle focus=false<cr>", { desc = "Symbols (Trouble)" })
-  map("n", "<leader>cl", "<cmd>Trouble lsp toggle focus=false win.position=right<cr>", { desc = "LSP info (Trouble)" })
+  map(
+    "n",
+    "<leader>cs",
+    "<cmd>Trouble symbols toggle focus=false<cr>",
+    { desc = "Symbols (Trouble)" }
+  )
+  map(
+    "n",
+    "<leader>cl",
+    "<cmd>Trouble lsp toggle focus=false win.position=right<cr>",
+    { desc = "LSP info (Trouble)" }
+  )
 end
 
 -- ──────────────────────────────────────────────────────────────────────────────
@@ -142,11 +166,15 @@ end
 -- <leader>g: Git  (hunks via gitsigns on_attach)
 -- ──────────────────────────────────────────────────────────────────────────────
 if enabled(group, "toggleterm") then
-  map("n", "<leader>gg", function() require("config.terminal").lazygit_toggle() end, { desc = "Lazygit" })
+  map("n", "<leader>gg", function()
+    require("config.terminal").lazygit_toggle()
+  end, { desc = "Lazygit" })
 end
 
 if enabled(group, "snacks") then
-  map("n", "<leader>gB", function() require("snacks").gitbrowse() end, { desc = "Git browse" })
+  map("n", "<leader>gB", function()
+    require("snacks").gitbrowse()
+  end, { desc = "Git browse" })
 end
 
 -- ──────────────────────────────────────────────────────────────────────────────
@@ -165,16 +193,22 @@ end
 map("n", "<leader>qq", "<CMD>qa<CR>", { desc = "Quit all" })
 map("n", "<leader>qQ", "<CMD>qa!<CR>", { desc = "Quit without saving" })
 map("n", "<leader>qw", "<CMD>close<CR>", { desc = "Close window" })
-map("n", "<leader>qb", function() require("config.utils").safe_close_buffer() end, { desc = "Close buffer" })
+map("n", "<leader>qb", function()
+  require("config.utils").safe_close_buffer()
+end, { desc = "Close buffer" })
 map("n", "<leader>qa", "<CMD>wqa<CR>", { desc = "Save all and quit" })
 
 -- ──────────────────────────────────────────────────────────────────────────────
 -- <leader>s: Session 󱂬
 -- ──────────────────────────────────────────────────────────────────────────────
 if enabled(group, "session_manager") then
-  map("n", "<leader>ss", function() require("persisted").save() end, { desc = "Save session" })
+  map("n", "<leader>ss", function()
+    require("persisted").save()
+  end, { desc = "Save session" })
   map("n", "<leader>sl", "<CMD>Telescope persisted<CR>", { desc = "Load session" })
-  map("n", "<leader>so", function() require("persisted").load({ last = true }) end, { desc = "Open last session" })
+  map("n", "<leader>so", function()
+    require("persisted").load({ last = true })
+  end, { desc = "Open last session" })
   map("n", "<leader>sd", "<CMD>Telescope persisted<CR>", { desc = "Delete session (<C-d>)" })
   map("n", "<leader>sn", function()
     -- Fresh workspace: close everything, stay in current project CWD
@@ -202,22 +236,39 @@ map("n", "<leader>tp", "<CMD>tabprevious<CR>", { desc = "Previous tab" })
 -- Terminal tools
 if enabled(group, "toggleterm") then
   local git_root = "cd $(git rev-parse --show-toplevel 2>/dev/null) && clear"
-  map("n", "<leader>tk", "<CMD>TermExec go_back=0 direction=float cmd='" .. git_root .. "&& tokei'<CR>", { desc = "Tokei" })
-  map("n", "<leader>tb", function() require("config.terminal").btop_toggle() end, { desc = "Btop" })
-  map("n", "<leader>tg", function() require("config.terminal").gdu_toggle() end, { desc = "Gdu" })
+  map(
+    "n",
+    "<leader>tk",
+    "<CMD>TermExec go_back=0 direction=float cmd='" .. git_root .. "&& tokei'<CR>",
+    { desc = "Tokei" }
+  )
+  map("n", "<leader>tb", function()
+    require("config.terminal").btop_toggle()
+  end, { desc = "Btop" })
+  map("n", "<leader>tg", function()
+    require("config.terminal").gdu_toggle()
+  end, { desc = "Gdu" })
 end
 
 -- ──────────────────────────────────────────────────────────────────────────────
 -- <leader>u: UI Toggles (core toggles provided by snacks.lua)
 -- ──────────────────────────────────────────────────────────────────────────────
 if enabled(group, "snacks_zen") then
-  map("n", "<leader>uz", function() require("snacks").zen() end, { desc = "Toggle zen mode" })
-  map("n", "<leader>uZ", function() require("snacks").zen.zoom() end, { desc = "Toggle zen zoom (single window)" })
-  map("n", "<leader>ut", function() require("snacks").dim() end, { desc = "Toggle dim (twilight)" })
+  map("n", "<leader>uz", function()
+    require("snacks").zen()
+  end, { desc = "Toggle zen mode" })
+  map("n", "<leader>uZ", function()
+    require("snacks").zen.zoom()
+  end, { desc = "Toggle zen zoom (single window)" })
+  map("n", "<leader>ut", function()
+    require("snacks").dim()
+  end, { desc = "Toggle dim (twilight)" })
 end
 
 if enabled(group, "notify") then
-  map("n", "<leader>un", function() require("notify").dismiss() end, { desc = "Dismiss notifications" })
+  map("n", "<leader>un", function()
+    require("notify").dismiss()
+  end, { desc = "Dismiss notifications" })
 end
 
 -- Colorscheme picker
@@ -279,7 +330,12 @@ map("n", "<leader>wL", "<C-w>L", { desc = "Move window far right" })
 -- ──────────────────────────────────────────────────────────────────────────────
 if enabled(group, "trouble") then
   map("n", "<leader>xx", "<cmd>Trouble diagnostics toggle<cr>", { desc = "All diagnostics" })
-  map("n", "<leader>xX", "<cmd>Trouble diagnostics toggle filter.buf=0<cr>", { desc = "Buffer diagnostics" })
+  map(
+    "n",
+    "<leader>xX",
+    "<cmd>Trouble diagnostics toggle filter.buf=0<cr>",
+    { desc = "Buffer diagnostics" }
+  )
   map("n", "<leader>xL", "<cmd>Trouble loclist toggle<cr>", { desc = "Location list" })
   map("n", "<leader>xQ", "<cmd>Trouble qflist toggle<cr>", { desc = "Quickfix list" })
 end
@@ -299,21 +355,35 @@ map("x", "<A-k>", ":m '<-2<CR>gv=gv", { desc = "Move selection up" })
 -- Clear search highlighting and dismiss notifications
 map("n", "<Esc>", function()
   vim.cmd.nohlsearch()
-  pcall(function() require("notify").dismiss({ silent = true }) end)
+  pcall(function()
+    require("notify").dismiss({ silent = true })
+  end)
 end, { desc = "Clear highlights / dismiss notifications" })
 
 -- Alpha dashboard
 if enabled(group, "snacks_dashboard") then
-  map("n", "<leader>;", function() require("snacks").dashboard() end, { desc = "Dashboard" })
+  map("n", "<leader>;", function()
+    require("snacks").dashboard()
+  end, { desc = "Dashboard" })
 end
 
 -- Flash jump motions
 if enabled(group, "flash") then
-  local function flash_jump() require("flash").jump() end
-  local function flash_ts() require("flash").treesitter() end
-  local function flash_remote() require("flash").remote() end
-  local function flash_ts_search() require("flash").treesitter_search() end
-  local function flash_toggle() require("flash").toggle() end
+  local function flash_jump()
+    require("flash").jump()
+  end
+  local function flash_ts()
+    require("flash").treesitter()
+  end
+  local function flash_remote()
+    require("flash").remote()
+  end
+  local function flash_ts_search()
+    require("flash").treesitter_search()
+  end
+  local function flash_toggle()
+    require("flash").toggle()
+  end
 
   vim.keymap.set({ "n", "x", "o" }, "s", flash_jump, { desc = "Flash jump" })
   vim.keymap.set({ "n", "x", "o" }, "S", flash_ts, { desc = "Flash treesitter" })
@@ -327,9 +397,15 @@ end
 
 -- Snacks scratch buffers
 if enabled(group, "snacks") then
-  map("n", "<leader>.", function() require("snacks").scratch() end, { desc = "Toggle scratch buffer" })
-  map("n", "<leader>S", function() require("snacks").scratch.select() end, { desc = "Select scratch buffer" })
-  map("n", "<leader>rn", function() require("snacks").rename.rename_file() end, { desc = "Rename file" })
+  map("n", "<leader>.", function()
+    require("snacks").scratch()
+  end, { desc = "Toggle scratch buffer" })
+  map("n", "<leader>S", function()
+    require("snacks").scratch.select()
+  end, { desc = "Select scratch buffer" })
+  map("n", "<leader>rn", function()
+    require("snacks").rename.rename_file()
+  end, { desc = "Rename file" })
 end
 
 -- Clear search highlight
@@ -337,7 +413,9 @@ map("n", "m", "<CMD>noh<CR>", { desc = "Clear search highlight" })
 
 -- Which-key help
 if enabled(group, "whichkey") then
-  map("n", "<leader>?", function() require("which-key").show({ global = false }) end, { desc = "Show keymaps" })
+  map("n", "<leader>?", function()
+    require("which-key").show({ global = false })
+  end, { desc = "Show keymaps" })
 end
 
 -- Notify dismiss (ESC in insert mode)
@@ -381,7 +459,12 @@ map("t", "<C-l>", "<C-\\><C-n><C-w>l")
 if enabled(group, "toggleterm") then
   local git_root = "cd $(git rev-parse --show-toplevel 2>/dev/null) && clear"
   map("t", "<C-\\>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
-  map("n", "<C-\\>", "<CMD>ToggleTerm go_back=0 cmd='" .. git_root .. "'<CR>", { desc = "Toggle terminal" })
+  map(
+    "n",
+    "<C-\\>",
+    "<CMD>ToggleTerm go_back=0 cmd='" .. git_root .. "'<CR>",
+    { desc = "Toggle terminal" }
+  )
 end
 
 -- ══════════════════════════════════════════════════════════════════════════════
@@ -416,14 +499,22 @@ if enabled(group, "gitsigns") then
 
       -- Hunk navigation (bracket style) [c ]c
       map("n", "]c", function()
-        if vim.wo.diff then return "]c" end
-        vim.schedule(function() gs.nav_hunk("next") end)
+        if vim.wo.diff then
+          return "]c"
+        end
+        vim.schedule(function()
+          gs.nav_hunk("next")
+        end)
         return "<Ignore>"
       end, { buffer = bufnr, expr = true, desc = "Next git hunk" })
 
       map("n", "[c", function()
-        if vim.wo.diff then return "[c" end
-        vim.schedule(function() gs.nav_hunk("prev") end)
+        if vim.wo.diff then
+          return "[c"
+        end
+        vim.schedule(function()
+          gs.nav_hunk("prev")
+        end)
         return "<Ignore>"
       end, { buffer = bufnr, expr = true, desc = "Previous git hunk" })
 
@@ -433,15 +524,23 @@ if enabled(group, "gitsigns") then
       map("n", "<leader>gS", gs.stage_buffer, opts("Stage buffer"))
       map("n", "<leader>gR", gs.reset_buffer, opts("Reset buffer"))
       map("n", "<leader>gp", gs.preview_hunk, opts("Preview hunk"))
-      map("n", "<leader>gb", function() gs.blame_line({ full = true }) end, opts("Blame line (full)"))
+      map("n", "<leader>gb", function()
+        gs.blame_line({ full = true })
+      end, opts("Blame line (full)"))
       map("n", "<leader>gd", gs.diffthis, opts("Diff this"))
-      map("n", "<leader>gD", function() gs.diffthis("~") end, opts("Diff root"))
+      map("n", "<leader>gD", function()
+        gs.diffthis("~")
+      end, opts("Diff root"))
       map("n", "<leader>gT", gs.preview_hunk_inline, opts("Preview hunk inline"))
       map("n", "<leader>gL", gs.toggle_current_line_blame, opts("Toggle line blame"))
 
       -- Visual mode stage/reset
-      map("v", "<leader>gs", function() gs.stage_hunk({ vim.fn.line("."), vim.fn.line("v") }) end, opts("Stage hunk"))
-      map("v", "<leader>gr", function() gs.reset_hunk({ vim.fn.line("."), vim.fn.line("v") }) end, opts("Reset hunk"))
+      map("v", "<leader>gs", function()
+        gs.stage_hunk({ vim.fn.line("."), vim.fn.line("v") })
+      end, opts("Stage hunk"))
+      map("v", "<leader>gr", function()
+        gs.reset_hunk({ vim.fn.line("."), vim.fn.line("v") })
+      end, opts("Reset hunk"))
     end
   end
 end

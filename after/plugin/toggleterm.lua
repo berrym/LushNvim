@@ -6,7 +6,12 @@ if utils.enabled(group, "toggleterm") then
     open_mapping = [[<c-t>]],
     on_open = function(term)
       vim.cmd.startinsert()
-      vim.keymap.set("n", "q", "<cmd>close<CR>", { buffer = term.bufnr, noremap = true, silent = true })
+      vim.keymap.set(
+        "n",
+        "q",
+        "<cmd>close<CR>",
+        { buffer = term.bufnr, noremap = true, silent = true }
+      )
     end,
     size = 25,
     direction = "horizontal",

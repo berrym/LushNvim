@@ -5,7 +5,8 @@ local utils = require("config.utils")
 local group = utils.get_plugin_group()
 
 if utils.enabled(group, "lualine") then
-	local styles = require("lush.statuslines")
-	local choice = (type(utils.get_statusline) == "function" and utils.get_statusline()) or styles.default
-	styles.apply(choice)
+  local styles = require("lush.statuslines")
+  local choice = (type(utils.get_statusline) == "function" and utils.get_statusline())
+    or styles.default
+  styles.apply(choice)
 end

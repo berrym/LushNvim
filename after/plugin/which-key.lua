@@ -32,5 +32,4 @@ if utils.enabled(group, "whichkey") then
     { "<leader>r", group = "Rust", icon = "🦀" },
     { "<leader>p", group = "Python", icon = "🐍" },
   })
-
 end

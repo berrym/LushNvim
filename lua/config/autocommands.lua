@@ -84,16 +84,27 @@ end
 -- ══════════════════════════════════════════════════════════════════════════════
 
 local sidebar_filetypes = {
-  ["neo-tree"] = true, ["Trouble"] = true, ["qf"] = true, ["help"] = true,
-  ["toggleterm"] = true, ["dapui_scopes"] = true, ["dapui_breakpoints"] = true,
-  ["dapui_stacks"] = true, ["dapui_watches"] = true, ["dapui_console"] = true,
+  ["neo-tree"] = true,
+  ["Trouble"] = true,
+  ["qf"] = true,
+  ["help"] = true,
+  ["toggleterm"] = true,
+  ["dapui_scopes"] = true,
+  ["dapui_breakpoints"] = true,
+  ["dapui_stacks"] = true,
+  ["dapui_watches"] = true,
+  ["dapui_console"] = true,
   ["dap-repl"] = true,
 }
 
 local function is_sidebar_win(win)
-  if not vim.api.nvim_win_is_valid(win) then return true end
+  if not vim.api.nvim_win_is_valid(win) then
+    return true
+  end
   local cfg = vim.api.nvim_win_get_config(win)
-  if cfg.relative and cfg.relative ~= "" then return true end
+  if cfg.relative and cfg.relative ~= "" then
+    return true
+  end
   local buf = vim.api.nvim_win_get_buf(win)
   return vim.bo[buf].buftype == "terminal" or sidebar_filetypes[vim.bo[buf].filetype] or false
 end
@@ -108,11 +119,13 @@ local _cleanup_running = false
 -- Find or create a single reusable scratch buffer (prevents [No Name] proliferation)
 local function get_scratch_buf()
   for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-    if vim.api.nvim_buf_is_valid(buf)
-        and vim.api.nvim_buf_get_name(buf) == ""
-        and not vim.bo[buf].modified
-        and vim.bo[buf].buftype == ""
-        and vim.bo[buf].buflisted then
+    if
+      vim.api.nvim_buf_is_valid(buf)
+      and vim.api.nvim_buf_get_name(buf) == ""
+      and not vim.bo[buf].modified
+      and vim.bo[buf].buftype == ""
+      and vim.bo[buf].buflisted
+    then
       local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
       if #lines <= 1 and (lines[1] or "") == "" then
         return buf
@@ -125,15 +138,21 @@ end
 local function count_real_wins()
   local n = 0
   for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
-    if not is_sidebar_win(win) then n = n + 1 end
+    if not is_sidebar_win(win) then
+      n = n + 1
+    end
   end
   return n
 end
 
 local _ensuring_editor = false
 local function ensure_editor_window()
-  if _ensuring_editor then return end
-  if count_real_wins() > 0 then return end
+  if _ensuring_editor then
+    return
+  end
+  if count_real_wins() > 0 then
+    return
+  end
   _ensuring_editor = true
   local wins = vim.api.nvim_tabpage_list_wins(0)
   if #wins == 0 then
@@ -144,7 +163,7 @@ local function ensure_editor_window()
   for _, win in ipairs(wins) do
     if vim.api.nvim_win_is_valid(win) then
       local cfg = vim.api.nvim_win_get_config(win)
-      if (not cfg.relative or cfg.relative == "") then
+      if not cfg.relative or cfg.relative == "" then
         local buf = vim.api.nvim_win_get_buf(win)
         if vim.bo[buf].filetype ~= "neo-tree" and vim.bo[buf].buftype ~= "terminal" then
           vim.api.nvim_win_set_buf(win, get_scratch_buf())
@@ -176,9 +195,9 @@ autocmd("BufEnter", {
   callback = function()
     local layout = vim.fn.winlayout()
     if
-        layout[1] == "leaf"
-        and vim.bo[vim.api.nvim_win_get_buf(layout[2])].filetype == "Trouble"
-        and layout[3] == nil
+      layout[1] == "leaf"
+      and vim.bo[vim.api.nvim_win_get_buf(layout[2])].filetype == "Trouble"
+      and layout[3] == nil
     then
       vim.schedule(function()
         pcall(vim.cmd, "Trouble close")
@@ -191,7 +210,21 @@ autocmd("BufEnter", {
 -- Filetype-specific indentation settings
 local indent_config = {
   [2] = { "lua", "css", "html", "javascript", "typescript", "scss", "xml", "xhtml", "yaml", "ruby" },
-  [4] = { "c", "cpp", "obj", "objcpp", "cuda", "proto", "python", "rust", "go", "markdown", "md", "toml", "java" },
+  [4] = {
+    "c",
+    "cpp",
+    "obj",
+    "objcpp",
+    "cuda",
+    "proto",
+    "python",
+    "rust",
+    "go",
+    "markdown",
+    "md",
+    "toml",
+    "java",
+  },
 }
 
 autocmd("FileType", {
@@ -260,10 +293,10 @@ autocmd("BufWinEnter", {
       "",
     }
     if
-        vim.bo.buftype ~= ""
-        or not vim.bo.modifiable
-        or vim.tbl_contains(ignoredFT, vim.bo.filetype)
-        or not (vim.fn.expand("%:p"):find("^/"))
+      vim.bo.buftype ~= ""
+      or not vim.bo.modifiable
+      or vim.tbl_contains(ignoredFT, vim.bo.filetype)
+      or not (vim.fn.expand("%:p"):find("^/"))
     then
       return
     end
@@ -272,14 +305,26 @@ autocmd("BufWinEnter", {
     local filepath = vim.fn.expand("%:p")
     local root = vim.fs.root(0, {
       ".git",
-      "Makefile", "CMakeLists.txt", "meson.build",
+      "Makefile",
+      "CMakeLists.txt",
+      "meson.build",
       "Cargo.toml",
-      "pyproject.toml", "setup.py", "setup.cfg", "Pipfile",
+      "pyproject.toml",
+      "setup.py",
+      "setup.cfg",
+      "Pipfile",
       "go.mod",
-      "package.json", "tsconfig.json",
-      "pom.xml", "build.gradle", "build.gradle.kts",
-      "Gemfile", "build.zig", "cpanfile", "Makefile.PL",
-      "docker-compose.yml", "docker-compose.yaml",
+      "package.json",
+      "tsconfig.json",
+      "pom.xml",
+      "build.gradle",
+      "build.gradle.kts",
+      "Gemfile",
+      "build.zig",
+      "cpanfile",
+      "Makefile.PL",
+      "docker-compose.yml",
+      "docker-compose.yaml",
       ".editorconfig",
     })
     local dir
@@ -299,9 +344,13 @@ autocmd("BufWinEnter", {
 autocmd("WinClosed", {
   group = augroup("layout_guardian", { clear = true }),
   callback = function()
-    if _cleanup_running then return end
+    if _cleanup_running then
+      return
+    end
     vim.schedule(function()
-      if _cleanup_running then return end
+      if _cleanup_running then
+        return
+      end
       ensure_editor_window()
     end)
   end,
@@ -315,15 +364,24 @@ autocmd("QuitPre", {
   group = augroup("quit_guardian", { clear = true }),
   callback = function()
     -- Dashboard: user chose quit — let it through
-    if vim.bo.filetype == "snacks_dashboard" then return end
+    if vim.bo.filetype == "snacks_dashboard" then
+      return
+    end
     -- Terminal buffers: don't intercept terminal close
-    if vim.bo.buftype == "terminal" then return end
+    if vim.bo.buftype == "terminal" then
+      return
+    end
     -- Scratch/empty unnamed buffer: nothing to protect, let nvim exit
     local buf = vim.api.nvim_get_current_buf()
-    if vim.api.nvim_buf_get_name(buf) == "" and vim.bo[buf].buftype == ""
-        and not vim.bo[buf].modified then
+    if
+      vim.api.nvim_buf_get_name(buf) == ""
+      and vim.bo[buf].buftype == ""
+      and not vim.bo[buf].modified
+    then
       local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
-      if #lines <= 1 and (lines[1] or "") == "" then return end
+      if #lines <= 1 and (lines[1] or "") == "" then
+        return
+      end
     end
     -- This is a real file in the last (or only) real window — protect it.
     -- Replace with scratch so :q closes the file but nvim stays alive.
@@ -346,16 +404,20 @@ autocmd("QuitPre", {
 
 local _neotree_was_open = false
 local _in_claude_diff = false
-local _diff_bufs = {}        -- {[buf_id] = true} buffers that entered diff mode during a Claude diff
-local _cleanup_timer = nil   -- debounce timer to prevent event storms
-local _pre_diff_bufs = {}    -- {buf_id, buf_id, ...} editor buffers that were open before diff started
-local _watchdog_timer = nil  -- one-shot timer that detects stuck _in_claude_diff state
+local _diff_bufs = {} -- {[buf_id] = true} buffers that entered diff mode during a Claude diff
+local _cleanup_timer = nil -- debounce timer to prevent event storms
+local _pre_diff_bufs = {} -- {buf_id, buf_id, ...} editor buffers that were open before diff started
+local _watchdog_timer = nil -- one-shot timer that detects stuck _in_claude_diff state
 
 local function neotree_is_visible()
   local ok, manager = pcall(require, "neo-tree.sources.manager")
-  if not ok then return false end
+  if not ok then
+    return false
+  end
   local ok2, state = pcall(manager.get_state, "filesystem")
-  if not ok2 or not state then return false end
+  if not ok2 or not state then
+    return false
+  end
   return state.winid and vim.api.nvim_win_is_valid(state.winid)
 end
 
@@ -369,24 +431,34 @@ local function any_diff_windows()
 end
 
 local function is_claude_diff_buf(buf)
-  if not vim.api.nvim_buf_is_valid(buf) then return false end
+  if not vim.api.nvim_buf_is_valid(buf) then
+    return false
+  end
   local ok, val = pcall(vim.api.nvim_buf_get_var, buf, "claudecode_diff_tab_name")
   return ok and val ~= nil
 end
 
 local function is_empty_unnamed_buf(buf)
-  if not vim.api.nvim_buf_is_valid(buf) then return false end
-  if vim.api.nvim_buf_get_name(buf) ~= "" then return false end
-  if vim.bo[buf].buftype ~= "" then return false end
-  if vim.bo[buf].modified then return false end
+  if not vim.api.nvim_buf_is_valid(buf) then
+    return false
+  end
+  if vim.api.nvim_buf_get_name(buf) ~= "" then
+    return false
+  end
+  if vim.bo[buf].buftype ~= "" then
+    return false
+  end
+  if vim.bo[buf].modified then
+    return false
+  end
   local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
   return #lines <= 1 and (lines[1] or "") == ""
 end
 
 local function is_claude_terminal(buf)
   return vim.api.nvim_buf_is_valid(buf)
-      and vim.bo[buf].buftype == "terminal"
-      and vim.api.nvim_buf_get_name(buf):lower():match("claude") ~= nil
+    and vim.bo[buf].buftype == "terminal"
+    and vim.api.nvim_buf_get_name(buf):lower():match("claude") ~= nil
 end
 
 local function focus_claude_terminal()
@@ -396,9 +468,11 @@ local function focus_claude_terminal()
       -- Enter terminal mode directly (belt-and-suspenders with WinEnter autocmd).
       -- Schedule so the window switch fully settles before startinsert.
       vim.schedule(function()
-        if vim.api.nvim_win_is_valid(win)
-            and vim.api.nvim_get_current_win() == win
-            and is_claude_terminal(vim.api.nvim_win_get_buf(win)) then
+        if
+          vim.api.nvim_win_is_valid(win)
+          and vim.api.nvim_get_current_win() == win
+          and is_claude_terminal(vim.api.nvim_win_get_buf(win))
+        then
           vim.cmd.startinsert()
         end
       end)
@@ -411,9 +485,17 @@ end
 -- Clear every bit of diff/layout tracking state. Called by :LushLayoutReset
 -- (user escape hatch) and by the watchdog when it detects stuck state.
 local function reset_diff_state(notify)
-  if _cleanup_timer then pcall(function() _cleanup_timer:stop() end) end
+  if _cleanup_timer then
+    pcall(function()
+      _cleanup_timer:stop()
+    end)
+  end
   _cleanup_timer = nil
-  if _watchdog_timer then pcall(function() _watchdog_timer:stop() end) end
+  if _watchdog_timer then
+    pcall(function()
+      _watchdog_timer:stop()
+    end)
+  end
   _watchdog_timer = nil
   _in_claude_diff = false
   _diff_bufs = {}
@@ -430,10 +512,16 @@ end
 -- cue and state is stuck. Auto-reset and warn the user. Rearms itself as
 -- long as diff windows are still visible, so long diff sessions are fine.
 local function arm_watchdog()
-  if _watchdog_timer then pcall(function() _watchdog_timer:stop() end) end
+  if _watchdog_timer then
+    pcall(function()
+      _watchdog_timer:stop()
+    end)
+  end
   _watchdog_timer = vim.defer_fn(function()
     _watchdog_timer = nil
-    if not _in_claude_diff then return end
+    if not _in_claude_diff then
+      return
+    end
     if any_diff_windows() then
       arm_watchdog()
       return
@@ -470,12 +558,20 @@ end
 
 local function diff_cleanup()
   _cleanup_timer = nil
-  if not _in_claude_diff then return end
+  if not _in_claude_diff then
+    return
+  end
   -- Still in an active diff — don't clean up yet
-  if any_diff_windows() then return end
+  if any_diff_windows() then
+    return
+  end
 
   _cleanup_running = true
-  if _watchdog_timer then pcall(function() _watchdog_timer:stop() end) end
+  if _watchdog_timer then
+    pcall(function()
+      _watchdog_timer:stop()
+    end)
+  end
   _watchdog_timer = nil
   _in_claude_diff = false
   local participant_bufs = _diff_bufs
@@ -486,7 +582,9 @@ local function diff_cleanup()
   -- 1. Turn off diff mode on any remaining windows
   for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
     if vim.api.nvim_win_is_valid(win) and vim.wo[win].diff then
-      vim.api.nvim_win_call(win, function() vim.cmd("diffoff") end)
+      vim.api.nvim_win_call(win, function()
+        vim.cmd("diffoff")
+      end)
     end
   end
 
@@ -508,8 +606,12 @@ local function diff_cleanup()
   -- 3. Build restore list: valid, loaded, non-diff pre-diff buffers
   local restore_bufs = {}
   for _, buf in ipairs(saved_bufs) do
-    if vim.api.nvim_buf_is_valid(buf) and vim.api.nvim_buf_is_loaded(buf)
-        and not participant_bufs[buf] and not is_claude_diff_buf(buf) then
+    if
+      vim.api.nvim_buf_is_valid(buf)
+      and vim.api.nvim_buf_is_loaded(buf)
+      and not participant_bufs[buf]
+      and not is_claude_diff_buf(buf)
+    then
       table.insert(restore_bufs, buf)
     end
   end
@@ -548,7 +650,9 @@ local function diff_cleanup()
       pcall(vim.api.nvim_set_current_win, host_win)
       while ri <= #restore_bufs do
         local ok = pcall(vim.cmd, "vsplit")
-        if not ok then break end
+        if not ok then
+          break
+        end
         vim.api.nvim_win_set_buf(0, restore_bufs[ri])
         ri = ri + 1
       end
@@ -596,11 +700,15 @@ local function diff_cleanup()
 end
 
 local function schedule_diff_cleanup()
-  if not _in_claude_diff then return end
+  if not _in_claude_diff then
+    return
+  end
   -- Debounce: cancel any pending timer and set a new one.
   -- 150ms delay lets claudecode finish its own synchronous cleanup first.
   if _cleanup_timer then
-    pcall(function() _cleanup_timer:stop() end)
+    pcall(function()
+      _cleanup_timer:stop()
+    end)
   end
   _cleanup_timer = vim.defer_fn(function()
     diff_cleanup()
@@ -619,7 +727,9 @@ autocmd("OptionSet", {
   pattern = "diff",
   callback = function()
     local new_val = vim.v.option_new
-    if new_val == false or new_val == "0" or new_val == 0 then return end
+    if new_val == false or new_val == "0" or new_val == 0 then
+      return
+    end
 
     vim.schedule(function()
       -- Scan all windows currently in diff mode for Claude markers
@@ -634,7 +744,9 @@ autocmd("OptionSet", {
       end
 
       -- Not a Claude diff (e.g. gitsigns diffthis) — ignore
-      if not claude_diff_found then return end
+      if not claude_diff_found then
+        return
+      end
 
       -- Track ALL buffers currently in diff mode (original + proposed)
       for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
@@ -651,7 +763,11 @@ autocmd("OptionSet", {
         _pre_diff_bufs = {}
         local wins_to_close = {}
         for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
-          if vim.api.nvim_win_is_valid(win) and not is_sidebar_win(win) and not vim.wo[win].diff then
+          if
+            vim.api.nvim_win_is_valid(win)
+            and not is_sidebar_win(win)
+            and not vim.wo[win].diff
+          then
             local buf = vim.api.nvim_win_get_buf(win)
             if vim.bo[buf].buftype ~= "terminal" and not _diff_bufs[buf] then
               table.insert(_pre_diff_bufs, buf)
@@ -687,7 +803,9 @@ autocmd("OptionSet", {
 autocmd("WinClosed", {
   group = augroup("diff_cleanup_winclosed", { clear = true }),
   callback = function()
-    if not _in_claude_diff then return end
+    if not _in_claude_diff then
+      return
+    end
     schedule_diff_cleanup()
   end,
 })
@@ -696,8 +814,12 @@ autocmd("WinClosed", {
 autocmd("BufEnter", {
   group = augroup("diff_cleanup_bufenter", { clear = true }),
   callback = function()
-    if not _in_claude_diff then return end
-    if vim.bo.buftype == "terminal" then return end
+    if not _in_claude_diff then
+      return
+    end
+    if vim.bo.buftype == "terminal" then
+      return
+    end
     schedule_diff_cleanup()
   end,
 })
@@ -721,13 +843,17 @@ autocmd("WinEnter", {
   group = augroup("claude_terminal_scroll", { clear = true }),
   callback = function()
     local buf = vim.api.nvim_get_current_buf()
-    if not is_claude_terminal(buf) then return end
+    if not is_claude_terminal(buf) then
+      return
+    end
     -- Schedule so layout operations (split, set_buf, resize) fully settle first.
     -- startinsert on a terminal buffer enters Terminal-Job mode (the "insert
     -- mode" for terminals), which anchors the viewport to the terminal cursor.
     vim.schedule(function()
-      if is_claude_terminal(vim.api.nvim_get_current_buf())
-          and vim.api.nvim_get_mode().mode ~= "t" then
+      if
+        is_claude_terminal(vim.api.nvim_get_current_buf())
+        and vim.api.nvim_get_mode().mode ~= "t"
+      then
         vim.cmd.startinsert()
       end
     end)

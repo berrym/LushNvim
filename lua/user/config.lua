@@ -502,6 +502,8 @@ end
 
 -- Language bundle expansion (only runs if M.languages is set)
 -- Merges bundle defaults into tables above; manual entries always win.
-pcall(function() require("config.languages").apply(M) end)
+pcall(function()
+  require("config.languages").apply(M)
+end)
 
 return M

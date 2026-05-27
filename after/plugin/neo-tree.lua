@@ -34,8 +34,8 @@ if utils.enabled(group, "neotree") then
                 if not cfg.relative or cfg.relative == "" then
                   -- Detect terminal/toggleterm/claude windows
                   local is_bottom = bt == "terminal"
-                      or ft == "toggleterm"
-                      or (bt == "terminal" and vim.api.nvim_buf_get_name(buf):match("claude"))
+                    or ft == "toggleterm"
+                    or (bt == "terminal" and vim.api.nvim_buf_get_name(buf):match("claude"))
                   if is_bottom then
                     local height = vim.api.nvim_win_get_height(win)
                     vim.api.nvim_set_current_win(win)
@@ -64,7 +64,7 @@ if utils.enabled(group, "neotree") then
     },
     buffers = {
       follow_current_file = {
-        enabled = true,          -- This will find and focus the file in the active buffer every time
+        enabled = true, -- This will find and focus the file in the active buffer every time
         --                       -- the current file is changed while the tree is open.
         leave_dirs_open = false, -- `false` closes auto expanded dirs, such as with `:Neotree reveal`
       },

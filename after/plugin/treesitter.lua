@@ -16,7 +16,9 @@ if utils.enabled(group, "treesitter") then
       for _, lang in ipairs(installed) do
         installed_set[lang] = true
       end
-      local missing = vim.tbl_filter(function(p) return not installed_set[p] end, parsers)
+      local missing = vim.tbl_filter(function(p)
+        return not installed_set[p]
+      end, parsers)
       if #missing > 0 then
         ts.install(missing)
       end
@@ -28,7 +30,9 @@ if utils.enabled(group, "treesitter") then
     group = vim.api.nvim_create_augroup("TreesitterHighlight", { clear = true }),
     callback = function(args)
       local ft = vim.bo[args.buf].filetype
-      if ft == "" or ft == "snacks_dashboard" then return end
+      if ft == "" or ft == "snacks_dashboard" then
+        return
+      end
       local lang = vim.treesitter.language.get_lang(ft)
       if lang and pcall(vim.treesitter.language.inspect, lang) then
         vim.treesitter.start(args.buf, lang)
@@ -48,22 +52,50 @@ if utils.enabled(group, "treesitter") then
     local ts_move = require("nvim-treesitter-textobjects.move")
 
     -- Select: af/if (function), ac/ic (class), aa/ia (parameter)
-    vim.keymap.set({ "x", "o" }, "af", function() ts_select.select_textobject("@function.outer") end, { desc = "Select outer function" })
-    vim.keymap.set({ "x", "o" }, "if", function() ts_select.select_textobject("@function.inner") end, { desc = "Select inner function" })
-    vim.keymap.set({ "x", "o" }, "ac", function() ts_select.select_textobject("@class.outer") end, { desc = "Select outer class" })
-    vim.keymap.set({ "x", "o" }, "ic", function() ts_select.select_textobject("@class.inner") end, { desc = "Select inner class" })
-    vim.keymap.set({ "x", "o" }, "aa", function() ts_select.select_textobject("@parameter.outer") end, { desc = "Select outer parameter" })
-    vim.keymap.set({ "x", "o" }, "ia", function() ts_select.select_textobject("@parameter.inner") end, { desc = "Select inner parameter" })
+    vim.keymap.set({ "x", "o" }, "af", function()
+      ts_select.select_textobject("@function.outer")
+    end, { desc = "Select outer function" })
+    vim.keymap.set({ "x", "o" }, "if", function()
+      ts_select.select_textobject("@function.inner")
+    end, { desc = "Select inner function" })
+    vim.keymap.set({ "x", "o" }, "ac", function()
+      ts_select.select_textobject("@class.outer")
+    end, { desc = "Select outer class" })
+    vim.keymap.set({ "x", "o" }, "ic", function()
+      ts_select.select_textobject("@class.inner")
+    end, { desc = "Select inner class" })
+    vim.keymap.set({ "x", "o" }, "aa", function()
+      ts_select.select_textobject("@parameter.outer")
+    end, { desc = "Select outer parameter" })
+    vim.keymap.set({ "x", "o" }, "ia", function()
+      ts_select.select_textobject("@parameter.inner")
+    end, { desc = "Select inner parameter" })
 
     -- Move: ]m/[m (function start), ]M/[M (function end), ]]/[[ (class start), ][/[] (class end)
-    vim.keymap.set({ "n", "x", "o" }, "]m", function() ts_move.goto_next_start("@function.outer") end, { desc = "Next function start" })
-    vim.keymap.set({ "n", "x", "o" }, "]M", function() ts_move.goto_next_end("@function.outer") end, { desc = "Next function end" })
-    vim.keymap.set({ "n", "x", "o" }, "]]", function() ts_move.goto_next_start("@class.outer") end, { desc = "Next class start" })
-    vim.keymap.set({ "n", "x", "o" }, "][", function() ts_move.goto_next_end("@class.outer") end, { desc = "Next class end" })
-    vim.keymap.set({ "n", "x", "o" }, "[m", function() ts_move.goto_previous_start("@function.outer") end, { desc = "Previous function start" })
-    vim.keymap.set({ "n", "x", "o" }, "[M", function() ts_move.goto_previous_end("@function.outer") end, { desc = "Previous function end" })
-    vim.keymap.set({ "n", "x", "o" }, "[[", function() ts_move.goto_previous_start("@class.outer") end, { desc = "Previous class start" })
-    vim.keymap.set({ "n", "x", "o" }, "[]", function() ts_move.goto_previous_end("@class.outer") end, { desc = "Previous class end" })
+    vim.keymap.set({ "n", "x", "o" }, "]m", function()
+      ts_move.goto_next_start("@function.outer")
+    end, { desc = "Next function start" })
+    vim.keymap.set({ "n", "x", "o" }, "]M", function()
+      ts_move.goto_next_end("@function.outer")
+    end, { desc = "Next function end" })
+    vim.keymap.set({ "n", "x", "o" }, "]]", function()
+      ts_move.goto_next_start("@class.outer")
+    end, { desc = "Next class start" })
+    vim.keymap.set({ "n", "x", "o" }, "][", function()
+      ts_move.goto_next_end("@class.outer")
+    end, { desc = "Next class end" })
+    vim.keymap.set({ "n", "x", "o" }, "[m", function()
+      ts_move.goto_previous_start("@function.outer")
+    end, { desc = "Previous function start" })
+    vim.keymap.set({ "n", "x", "o" }, "[M", function()
+      ts_move.goto_previous_end("@function.outer")
+    end, { desc = "Previous function end" })
+    vim.keymap.set({ "n", "x", "o" }, "[[", function()
+      ts_move.goto_previous_start("@class.outer")
+    end, { desc = "Previous class start" })
+    vim.keymap.set({ "n", "x", "o" }, "[]", function()
+      ts_move.goto_previous_end("@class.outer")
+    end, { desc = "Previous class end" })
   end
 end
 

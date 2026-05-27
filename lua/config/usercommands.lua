@@ -93,8 +93,12 @@ create_user_command("LushReload", function(opts)
   --    statusline choice, and re-require user.usercommands. Announces itself
   --    via the "Here be dragons" greeting — intentional, that's the signal
   --    that a full replay just happened.
-  if opts.bang and user_ok and type(user_config) == "table"
-      and type(user_config.custom_conf) == "function" then
+  if
+    opts.bang
+    and user_ok
+    and type(user_config) == "table"
+    and type(user_config.custom_conf) == "function"
+  then
     local ok, err = pcall(user_config.custom_conf)
     if not ok then
       table.insert(failed, "custom_conf: " .. tostring(err))
@@ -114,7 +118,9 @@ create_user_command("LushReload", function(opts)
     utils.notify_error("Reload errors:\n" .. table.concat(failed, "\n"), "LushReload")
   else
     local msg = string.format("Cleared %d modules, re-sourced after/plugin", cleared)
-    if opts.bang then msg = msg .. " (with custom_conf replay)" end
+    if opts.bang then
+      msg = msg .. " (with custom_conf replay)"
+    end
     utils.notify_info(msg, "LushReload")
   end
 end, {
@@ -129,8 +135,13 @@ create_user_command("LushInfo", function()
   local bufname = vim.api.nvim_buf_get_name(buf)
 
   local lines = {}
-  local function add(text) table.insert(lines, text) end
-  local function header(text) add(""); add("--- " .. text .. " ---") end
+  local function add(text)
+    table.insert(lines, text)
+  end
+  local function header(text)
+    add("")
+    add("--- " .. text .. " ---")
+  end
 
   add("=== LushInfo ===")
   add("Buffer: " .. (bufname ~= "" and bufname or "[No Name]"))
@@ -173,8 +184,12 @@ create_user_command("LushInfo", function()
       end
     end
   end
-  if #formatters == 0 then add("  (none)") else
-    for _, f in ipairs(formatters) do add("  " .. f) end
+  if #formatters == 0 then
+    add("  (none)")
+  else
+    for _, f in ipairs(formatters) do
+      add("  " .. f)
+    end
   end
 
   -- Linters
@@ -198,8 +213,12 @@ create_user_command("LushInfo", function()
       end
     end
   end
-  if #linters == 0 then add("  (none)") else
-    for _, l in ipairs(linters) do add("  " .. l) end
+  if #linters == 0 then
+    add("  (none)")
+  else
+    for _, l in ipairs(linters) do
+      add("  " .. l)
+    end
   end
 
   -- DAP adapter
@@ -229,7 +248,9 @@ create_user_command("LushInfo", function()
   -- Display in floating window
   local width = 50
   for _, line in ipairs(lines) do
-    if #line + 4 > width then width = #line + 4 end
+    if #line + 4 > width then
+      width = #line + 4
+    end
   end
   local height = #lines
   local float_buf = vim.api.nvim_create_buf(false, true)

@@ -18,7 +18,9 @@ if utils.enabled(group, "telescope") then
       },
     },
   })
-  pcall(function() telescope.load_extension("ui-select") end)
+  pcall(function()
+    telescope.load_extension("ui-select")
+  end)
   if utils.enabled(group, "scope") then
     telescope.load_extension("scope")
   end
@@ -42,7 +44,9 @@ if utils.enabled(group, "telescope") then
   -- Provides load (<CR>), delete (<C-d>), and branch switch (<C-b>)
   _G.telescope_session_pick = function()
     local ok = pcall(require("telescope").extensions.persisted.persisted)
-    if not ok then utils.notify_warn("persisted.nvim not available", "Session") end
+    if not ok then
+      utils.notify_warn("persisted.nvim not available", "Session")
+    end
   end
 
   -- Custom project picker: cd to project, restore session or open fresh workspace
@@ -95,9 +99,13 @@ if utils.enabled(group, "telescope") then
           -- Branchless sessions (no @@) or non-git dirs are always valid
           local is_valid = true
           if branch and vim.fn.isdirectory(dir .. "/.git") == 1 then
-            vim.fn.system("git -C " .. vim.fn.shellescape(dir)
-              .. " rev-parse --verify --quiet refs/heads/" .. vim.fn.shellescape(branch)
-              .. " 2>/dev/null")
+            vim.fn.system(
+              "git -C "
+                .. vim.fn.shellescape(dir)
+                .. " rev-parse --verify --quiet refs/heads/"
+                .. vim.fn.shellescape(branch)
+                .. " 2>/dev/null"
+            )
             if vim.v.shell_error ~= 0 then
               is_valid = false
               table.insert(stale_sessions, session_path)
@@ -129,8 +137,11 @@ if utils.enabled(group, "telescope") then
     -- Get current git branch for a directory (cached per picker invocation)
     local branch_cache = {}
     local function get_branch(dir)
-      if branch_cache[dir] ~= nil then return branch_cache[dir] end
-      local branch = vim.fn.system("git -C " .. vim.fn.shellescape(dir) .. " branch --show-current 2>/dev/null")
+      if branch_cache[dir] ~= nil then
+        return branch_cache[dir]
+      end
+      local branch =
+        vim.fn.system("git -C " .. vim.fn.shellescape(dir) .. " branch --show-current 2>/dev/null")
       branch = vim.trim(branch)
       branch_cache[dir] = branch ~= "" and branch or false
       return branch_cache[dir]
@@ -164,128 +175,144 @@ if utils.enabled(group, "telescope") then
         -- persisted.load() detects CWD + current branch automatically
         -- PersistedLoadPost autocmd in session.lua handles the notification
         local loaded = pcall(persisted.load)
-        if loaded then return end
+        if loaded then
+          return
+        end
       end
 
       -- No session found: fall back to fresh workspace
       open_fresh_workspace(project_dir)
     end
 
-    pickers.new({}, {
-      prompt_title = "Projects  Enter=restore session  Ctrl-n=fresh workspace  Ctrl-d=delete session",
-      finder = finders.new_table({
-        results = results,
-        entry_maker = function(entry)
-          if entry == "__empty__" then
+    pickers
+      .new({}, {
+        prompt_title = "Projects  Enter=restore session  Ctrl-n=fresh workspace  Ctrl-d=delete session",
+        finder = finders.new_table({
+          results = results,
+          entry_maker = function(entry)
+            if entry == "__empty__" then
+              return {
+                display = function()
+                  return displayer({
+                    "  Empty workspace",
+                    { "", "Comment" },
+                    { "", "Comment" },
+                    { "", "Comment" },
+                  })
+                end,
+                name = "Empty workspace",
+                value = "__empty__",
+                ordinal = "empty workspace",
+              }
+            end
+            local name = vim.fn.fnamemodify(entry, ":t")
+            local branch = get_branch(entry)
+            local branch_display = branch and (" " .. branch) or ""
+            local has_session = session_dirs[entry]
+            local tag = has_session and "(saved session)" or "(no session)"
+            local hl = has_session and "String" or "Comment"
             return {
-              display = function()
+              display = function(e)
                 return displayer({
-                  "  Empty workspace",
-                  { "", "Comment" },
-                  { "", "Comment" },
-                  { "", "Comment" },
+                  e.name,
+                  { branch_display, "Special" },
+                  { tag, hl },
+                  { e.value, "Comment" },
                 })
               end,
-              name = "Empty workspace",
-              value = "__empty__",
-              ordinal = "empty workspace",
+              name = name,
+              value = entry,
+              ordinal = name .. " " .. entry,
             }
-          end
-          local name = vim.fn.fnamemodify(entry, ":t")
-          local branch = get_branch(entry)
-          local branch_display = branch and (" " .. branch) or ""
-          local has_session = session_dirs[entry]
-          local tag = has_session and "(saved session)" or "(no session)"
-          local hl = has_session and "String" or "Comment"
-          return {
-            display = function(e)
-              return displayer({
-                e.name,
-                { branch_display, "Special" },
-                { tag, hl },
-                { e.value, "Comment" },
-              })
-            end,
-            name = name,
-            value = entry,
-            ordinal = name .. " " .. entry,
-          }
-        end,
-      }),
-      previewer = false,
-      sorter = conf.generic_sorter({}),
-      attach_mappings = function(prompt_bufnr, map)
-        -- <CR>: restore session if available, otherwise fresh workspace
-        actions.select_default:replace(function()
-          local selected = state.get_selected_entry(prompt_bufnr)
-          actions.close(prompt_bufnr)
-          if not selected then return end
-
-          if selected.value == "__empty__" then
-            open_fresh_workspace(nil)
-            return
-          end
-
-          if session_dirs[selected.value] then
-            open_with_session(selected.value)
-          else
-            open_fresh_workspace(selected.value)
-          end
-        end)
-
-        -- <C-n>: force fresh workspace (ignore any saved session)
-        local function open_fresh()
-          local selected = state.get_selected_entry()
-          actions.close(prompt_bufnr)
-          if not selected then return end
-          open_fresh_workspace(selected.value ~= "__empty__" and selected.value or nil)
-        end
-        map("i", "<C-n>", open_fresh)
-        map("n", "<C-n>", open_fresh)
-
-        -- <C-d>: delete saved session
-        local function delete_project_session()
-          local selected = state.get_selected_entry()
-          if not selected or selected.value == "__empty__" then return end
-
-          if not ok_persisted then
-            utils.notify_warn("persisted.nvim not available", "Session")
-            return
-          end
-
-          local project_dir = selected.value
-          local name = vim.fn.fnamemodify(project_dir, ":t")
-
-          if not session_dirs[project_dir] then
-            utils.notify_info("No session for " .. name, "Session")
-            return
-          end
-
-          vim.ui.select({ "Yes", "No" }, { prompt = "Delete session for " .. name .. "?" }, function(choice)
-            if choice ~= "Yes" then return end
-            local sessions = persisted.list() or {}
-            for _, session_path in ipairs(sessions) do
-              local fname = vim.fn.fnamemodify(session_path, ":t:r")
-              local dir_part = fname:gsub("@@.*$", "")
-              local dir = dir_part:gsub("%%%%", "/")
-              if dir == project_dir then
-                pcall(vim.fn.delete, session_path)
-              end
+          end,
+        }),
+        previewer = false,
+        sorter = conf.generic_sorter({}),
+        attach_mappings = function(prompt_bufnr, map)
+          -- <CR>: restore session if available, otherwise fresh workspace
+          actions.select_default:replace(function()
+            local selected = state.get_selected_entry(prompt_bufnr)
+            actions.close(prompt_bufnr)
+            if not selected then
+              return
             end
-            session_dirs[project_dir] = nil
-            utils.notify_info("Deleted session: " .. name, "Session")
 
-            local current_picker = state.get_current_picker(prompt_bufnr)
-            if current_picker then
-              current_picker:refresh(nil, { reset_prompt = false })
+            if selected.value == "__empty__" then
+              open_fresh_workspace(nil)
+              return
+            end
+
+            if session_dirs[selected.value] then
+              open_with_session(selected.value)
+            else
+              open_fresh_workspace(selected.value)
             end
           end)
-        end
-        map("i", "<C-d>", delete_project_session)
-        map("n", "<C-d>", delete_project_session)
 
-        return true
-      end,
-    }):find()
+          -- <C-n>: force fresh workspace (ignore any saved session)
+          local function open_fresh()
+            local selected = state.get_selected_entry()
+            actions.close(prompt_bufnr)
+            if not selected then
+              return
+            end
+            open_fresh_workspace(selected.value ~= "__empty__" and selected.value or nil)
+          end
+          map("i", "<C-n>", open_fresh)
+          map("n", "<C-n>", open_fresh)
+
+          -- <C-d>: delete saved session
+          local function delete_project_session()
+            local selected = state.get_selected_entry()
+            if not selected or selected.value == "__empty__" then
+              return
+            end
+
+            if not ok_persisted then
+              utils.notify_warn("persisted.nvim not available", "Session")
+              return
+            end
+
+            local project_dir = selected.value
+            local name = vim.fn.fnamemodify(project_dir, ":t")
+
+            if not session_dirs[project_dir] then
+              utils.notify_info("No session for " .. name, "Session")
+              return
+            end
+
+            vim.ui.select(
+              { "Yes", "No" },
+              { prompt = "Delete session for " .. name .. "?" },
+              function(choice)
+                if choice ~= "Yes" then
+                  return
+                end
+                local sessions = persisted.list() or {}
+                for _, session_path in ipairs(sessions) do
+                  local fname = vim.fn.fnamemodify(session_path, ":t:r")
+                  local dir_part = fname:gsub("@@.*$", "")
+                  local dir = dir_part:gsub("%%%%", "/")
+                  if dir == project_dir then
+                    pcall(vim.fn.delete, session_path)
+                  end
+                end
+                session_dirs[project_dir] = nil
+                utils.notify_info("Deleted session: " .. name, "Session")
+
+                local current_picker = state.get_current_picker(prompt_bufnr)
+                if current_picker then
+                  current_picker:refresh(nil, { reset_prompt = false })
+                end
+              end
+            )
+          end
+          map("i", "<C-d>", delete_project_session)
+          map("n", "<C-d>", delete_project_session)
+
+          return true
+        end,
+      })
+      :find()
   end
 end

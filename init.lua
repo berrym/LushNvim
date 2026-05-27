@@ -60,7 +60,11 @@ else
               { title = "LushNvim" }
             )
           else
-            vim.notify("Example config not found at " .. example, vim.log.levels.ERROR, { title = "LushNvim" })
+            vim.notify(
+              "Example config not found at " .. example,
+              vim.log.levels.ERROR,
+              { title = "LushNvim" }
+            )
           end
         end, { desc = "Create user config from example template" })
       end,
