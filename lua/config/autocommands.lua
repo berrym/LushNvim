@@ -199,10 +199,20 @@ autocmd({ "WinNew", "WinClosed", "BufWinEnter" }, {
   callback = function()
     vim.schedule(function()
       local intended = vim.g.lush_neotree_position or "left"
+      -- Only enforce side when the user's intent is left or right.
+      -- "current" (fullscreen) and "float" placements are left alone.
+      if intended ~= "left" and intended ~= "right" then
+        return
+      end
       for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
         if vim.api.nvim_win_is_valid(win) then
           local buf = vim.api.nvim_win_get_buf(win)
           if vim.bo[buf].filetype == "neo-tree" then
+            local cfg = vim.api.nvim_win_get_config(win)
+            -- Skip floating tree windows (Neotree reveal float).
+            if cfg.relative and cfg.relative ~= "" then
+              return
+            end
             local col = vim.api.nvim_win_get_position(win)[2]
             local total = vim.o.columns
             local on_left = col == 0

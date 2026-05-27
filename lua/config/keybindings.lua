@@ -181,18 +181,56 @@ end
 -- <leader>n: Explorer 󰙅
 -- ──────────────────────────────────────────────────────────────────────────────
 if enabled(group, "neotree") then
-  map("n", "<leader>nn", "<CMD>Neotree toggle current<CR>", { desc = "Toggle fullscreen" })
-  -- Explicit left/right also pin the intended position so the guard autocmd
-  -- in autocommands.lua doesn't snap them back.
+  -- Returns the visible neo-tree window id and its current side, or nil if closed.
+  local function neotree_state()
+    local ok, manager = pcall(require, "neo-tree.sources.manager")
+    if not ok then
+      return nil
+    end
+    local ok2, state = pcall(manager.get_state, "filesystem")
+    if not ok2 or not state or not state.winid or not vim.api.nvim_win_is_valid(state.winid) then
+      return nil
+    end
+    local cfg = vim.api.nvim_win_get_config(state.winid)
+    if cfg.relative and cfg.relative ~= "" then
+      return state.winid, "float"
+    end
+    local col = vim.api.nvim_win_get_position(state.winid)[2]
+    return state.winid, (col == 0) and "left" or "right"
+  end
+
+  -- Toggle behavior with side-switching: closed→open, same-side→close,
+  -- other-side→reopen on this side.
+  local function toggle_side(side)
+    local _, current_side = neotree_state()
+    if current_side == side then
+      vim.cmd("Neotree close")
+      return
+    end
+    vim.g.lush_neotree_position = side
+    pcall(vim.cmd, "Neotree close")
+    pcall(vim.cmd, "Neotree show " .. side)
+  end
+
   map("n", "<leader>nl", function()
-    vim.g.lush_neotree_position = "left"
-    vim.cmd("Neotree toggle left")
+    toggle_side("left")
   end, { desc = "Toggle left" })
   map("n", "<leader>nr", function()
-    vim.g.lush_neotree_position = "right"
-    vim.cmd("Neotree toggle right")
+    toggle_side("right")
   end, { desc = "Toggle right" })
-  map("n", "<leader>nf", "<CMD>Neotree reveal float<CR>", { desc = "Toggle float" })
+
+  -- Fullscreen (in current window) — sets intent so the position guard
+  -- doesn't snap it back to a side.
+  map("n", "<leader>nn", function()
+    vim.g.lush_neotree_position = "current"
+    vim.cmd("Neotree toggle current")
+  end, { desc = "Toggle fullscreen" })
+
+  -- Float reveal — intent set so guard skips floating windows.
+  map("n", "<leader>nf", function()
+    vim.g.lush_neotree_position = "float"
+    vim.cmd("Neotree reveal float")
+  end, { desc = "Toggle float" })
 end
 
 -- ──────────────────────────────────────────────────────────────────────────────
