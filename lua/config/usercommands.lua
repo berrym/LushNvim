@@ -9,13 +9,26 @@ end, { desc = "Updates plugins, mason packages, treesitter parsers" })
 -- edited the colorscheme / statusline choice in user/config.lua and want the
 -- same effect as a fresh start (including the startup greeting).
 --
--- What this can and cannot do:
---   Reloaded: options, keymaps (overwrites), autocmds (augroup clear=true),
---             user commands, lsp config registrations, all after/plugin setup.
---   NOT handled (Neovim limitations): removed keymaps/options linger until
---             restart; already-attached LSP clients keep their old config
---             (use :LspRestart); lazy.nvim plugin `config` functions are not
---             re-invoked (they ran once at plugin load).
+-- What this handles:
+--   - Options, autocmds (augroup clear=true), user commands, LSP config regs,
+--     and all after/plugin setup functions.
+--   - Keymaps set via utils.map / utils.track_keymap are cleared first and
+--     re-bound by the re-source, so disabling a plugin in user.config and
+--     reloading removes its bindings (instead of leaving them stale in
+--     which-key).
+--   - LSP clients are auto-restarted at the end so updated lsp_configs land
+--     on already-attached buffers.
+--
+-- What it can NOT do (Neovim limitations):
+--   - Lazy plugins that configure inline via `config = function` in lazy.lua
+--     never re-run that block (lazy fires it once). Move config to
+--     after/plugin/<plugin>.lua for reload awareness.
+--   - Plugin-internal keymaps (set inside a plugin's own setup) only re-bind
+--     when their setup is called again — handled via the after/plugin
+--     re-source pass for our own configs, but plugins that don't expose a
+--     setup or whose setup is one-shot retain their old internal state.
+--   - Options that LushNvim previously set in M.options but later removed
+--     stay applied until restart (vim has no "diff from defaults" API).
 create_user_command("LushReload", function(opts)
   local utils = require("config.utils")
   local cleared = 0
