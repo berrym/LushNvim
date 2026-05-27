@@ -65,6 +65,7 @@ if enabled(group, "lsp") then
         [vim.diagnostic.severity.INFO] = "»",
       },
     },
+    float = { border = "rounded" },
   })
 end
 

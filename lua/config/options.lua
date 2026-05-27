@@ -43,6 +43,10 @@ vim_opts({
     textwidth = 100,
     termguicolors = true,
     undofile = true,
+    -- Global rounded border for every floating window (LSP hover/signature,
+    -- diagnostics, snacks pickers, etc.). Nvim 0.11+ honors this for all
+    -- floats by default; plugins that override get tuned individually.
+    winborder = "rounded",
     wrap = false,
     writebackup = false,
   },

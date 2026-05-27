@@ -8,7 +8,10 @@ if utils.enabled(group, "bufferline") then
       close_command = utils.safe_close_buffer,
       right_mouse_command = utils.safe_close_buffer,
       diagnostics = "nvim_lsp",
-      separator_style = "slant",
+      -- Clean vertical bars between tabs, no slants; the active tab gets a
+      -- left-edge accent bar as its indicator instead.
+      separator_style = "thin",
+      indicator = { style = "icon", icon = "▎" },
       diagnostics_indicator = function(count, level)
         local icon = level:match("error") and " " or " "
         return " " .. icon .. count

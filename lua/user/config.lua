@@ -487,10 +487,10 @@ M.custom_conf = function()
   utils.notify_info("Here be dragons! Fear is the mind killer.", "<== lususnaturae ==>")
 
   -- set color scheme
-  utils.colors("carbonfox")
+  utils.colors("tokyonight-night")
+  -- utils.colors("carbonfox")
   -- utils.colors("nightfox")
   -- utils.colors("duskfox")
-  -- utils.colors("tokyonight-night")
   -- utils.colors("catppuccin-nvim")
 
   -- statusline style: evil | lush | fox | tokyonight | catppuccin | minimal | auto

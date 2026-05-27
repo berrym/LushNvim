@@ -6,6 +6,8 @@ if utils.enabled(group, "telescope") then
   telescope.setup({
     defaults = {
       file_ignore_patterns = { "node_modules", ".git/" },
+      -- Rounded corners to match the global winborder = "rounded"
+      borderchars = { "─", "│", "─", "│", "╭", "╮", "╯", "╰" },
     },
     pickers = {
       find_files = {
