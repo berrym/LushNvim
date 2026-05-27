@@ -430,7 +430,53 @@ end, { desc = "Show LushNvim config-level status panel" })
 
 -- :LushHealth — convenience alias for :checkhealth lush (more discoverable).
 -- Opens in a new tab so the active IDE layout (neo-tree + editor + claude
--- terminal) stays intact in the original tab.
+-- terminal) stays intact in the original tab. The new tab is self-cleaning:
+-- `q` closes the whole tab, and if the user closes the checkhealth window
+-- by other means (clicking a different tab, :bdelete, etc.) we auto-close
+-- the now-empty tab so they're returned to the IDE layout.
 create_user_command("LushHealth", function()
+  local previous_tab = vim.api.nvim_get_current_tabpage()
   vim.cmd("tab checkhealth lush")
-end, { desc = "Run :checkhealth lush in a new tab" })
+  local health_tab = vim.api.nvim_get_current_tabpage()
+  if health_tab == previous_tab then
+    -- Already in the same tab (edge case); nothing else to do.
+    return
+  end
+  local health_buf = vim.api.nvim_get_current_buf()
+
+  -- q closes the entire tab, not just the window.
+  vim.keymap.set("n", "q", function()
+    pcall(vim.cmd, "tabclose")
+  end, { buffer = health_buf, nowait = true, silent = true, desc = "Close health tab" })
+
+  -- Auto-close the tab when the checkhealth buffer hides (covers cases where
+  -- the user runs :bdelete, switches tabs, or closes the window via the
+  -- bufferline). We schedule a check so the tab close happens after the
+  -- triggering event has settled.
+  vim.api.nvim_create_autocmd({ "BufWinLeave", "BufHidden", "BufDelete" }, {
+    buffer = health_buf,
+    once = true,
+    callback = function()
+      vim.schedule(function()
+        if not vim.api.nvim_tabpage_is_valid(health_tab) then
+          return
+        end
+        local wins = vim.api.nvim_tabpage_list_wins(health_tab)
+        -- If the only window left is empty/scratch (the buffer is gone),
+        -- close the tab. Skip if the tab somehow gained real content.
+        local has_content = false
+        for _, win in ipairs(wins) do
+          local buf = vim.api.nvim_win_get_buf(win)
+          if vim.api.nvim_buf_get_name(buf) ~= "" or vim.bo[buf].filetype ~= "" then
+            has_content = true
+            break
+          end
+        end
+        if not has_content then
+          pcall(vim.api.nvim_set_current_tabpage, health_tab)
+          pcall(vim.cmd, "tabclose")
+        end
+      end)
+    end,
+  })
+end, { desc = "Run :checkhealth lush in a self-cleaning new tab" })
