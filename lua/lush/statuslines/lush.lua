@@ -1,19 +1,10 @@
 -- Lush — the signature LushNvim statusline.
--- Language-aware components for Python (venv), Rust (crate), Go (module),
--- JS/TS (package), C/C++ (build system). Colors inherit from the active
--- colorscheme via theme = "auto", with a few accents overlaid.
+-- Fox-restrained shape with bubble-cap section separators for visual
+-- signature, plus a single project-identifying component (Python venv,
+-- Rust crate, Go module, JS/TS package, C/C++ build system) that only
+-- shows on wide windows so it's contextual rather than constant.
 
 local M = {}
-
--- ──────────────────────────────────────────────────────────────────────────────
--- Mode palette — auto-derives from colorscheme so it reads well on any theme.
--- ──────────────────────────────────────────────────────────────────────────────
-local function hl(name, fallback)
-	local ok, h = pcall(vim.api.nvim_get_hl, 0, { name = name, link = false })
-	if not ok or not h or (not h.fg and not h.bg) then return fallback end
-	local fg = h.fg and string.format("#%06x", h.fg) or fallback
-	return fg
-end
 
 -- ──────────────────────────────────────────────────────────────────────────────
 -- Language detection helpers. All results cached per-buffer (`b:lush_*`).
@@ -105,7 +96,6 @@ local function c_build_system()
 end
 
 local function language_component()
-	-- dispatch by filetype; cheapest check first
 	local out = python_venv()
 	if out ~= "" then return out end
 	out = rust_crate()
@@ -117,46 +107,7 @@ local function language_component()
 	return c_build_system()
 end
 
--- ──────────────────────────────────────────────────────────────────────────────
--- Misc components.
--- ──────────────────────────────────────────────────────────────────────────────
-
-local function macro_recording()
-	local reg = vim.fn.reg_recording()
-	if reg == "" then return "" end
-	return " recording @" .. reg
-end
-
--- Warn when a buffer mixes tabs and spaces in leading indentation.
-local function mixed_indent()
-	if vim.b.lush_mixed ~= nil then return vim.b.lush_mixed end
-	local space_pat = vim.fn.search([[\v^ +]], "nw")
-	local tab_pat = vim.fn.search([[\v^\t+]], "nw")
-	local mixed = (space_pat > 0 and tab_pat > 0)
-	vim.b.lush_mixed = mixed and " mixed-indent" or ""
-	return vim.b.lush_mixed
-end
-
--- LSP progress spinner — animates while any server is doing work.
-local spinner_frames = { "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏" }
-local function lsp_spinner()
-	local progress = vim.lsp.status()
-	if progress == "" or progress == nil then return "" end
-	local frame = spinner_frames[(math.floor(vim.uv.now() / 80) % #spinner_frames) + 1]
-	return frame .. " " .. progress:gsub("%s+", " "):sub(1, 40)
-end
-
--- Scroll-position bar: 8 block glyphs mapped to percent-through-file.
-local scroll_glyphs = { "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█" }
-local function scroll_bar()
-	local cur = vim.api.nvim_win_get_cursor(0)[1]
-	local total = vim.api.nvim_buf_line_count(0)
-	if total == 0 then return scroll_glyphs[1] end
-	local idx = math.floor((cur - 1) / math.max(total - 1, 1) * (#scroll_glyphs - 1)) + 1
-	return scroll_glyphs[math.min(idx, #scroll_glyphs)]
-end
-
--- Clear per-buffer caches when the file changes on disk or buffer is re-entered.
+-- Clear per-buffer caches when the file changes on disk.
 vim.api.nvim_create_autocmd({ "BufWritePost", "DirChanged" }, {
 	group = vim.api.nvim_create_augroup("LushStatuslineCache", { clear = true }),
 	callback = function(args)
@@ -164,9 +115,42 @@ vim.api.nvim_create_autocmd({ "BufWritePost", "DirChanged" }, {
 		pcall(vim.api.nvim_buf_set_var, args.buf, "lush_go", nil)
 		pcall(vim.api.nvim_buf_set_var, args.buf, "lush_node", nil)
 		pcall(vim.api.nvim_buf_set_var, args.buf, "lush_cbuild", nil)
-		pcall(vim.api.nvim_buf_set_var, args.buf, "lush_mixed", nil)
 	end,
 })
+
+-- ──────────────────────────────────────────────────────────────────────────────
+-- Theme resolution — follows the active colorscheme so caps pop on every
+-- palette LushNvim ships with. Falls back to "auto" for unknown themes.
+-- ──────────────────────────────────────────────────────────────────────────────
+
+local fox_variants = {
+	nightfox = true, dayfox = true, dawnfox = true,
+	duskfox = true, nordfox = true, terafox = true, carbonfox = true,
+}
+
+local function pick_theme()
+	local scheme = vim.g.colors_name or ""
+
+	-- nightfox family has its own generator that builds a full lualine theme
+	-- tracking the active fox variant's palette.
+	if fox_variants[scheme] then
+		local ok, gen = pcall(require, "nightfox.util.lualine")
+		if ok then
+			local ok2, built = pcall(gen, scheme)
+			if ok2 then return built end
+		end
+	end
+
+	-- Named lualine themes that ship distinct a/b/c bgs (caps render cleanly).
+	if scheme:match("^tokyonight") then
+		if pcall(require, "lualine.themes.tokyonight") then return "tokyonight" end
+	end
+	if scheme:match("^catppuccin") then
+		if pcall(require, "lualine.themes.catppuccin") then return "catppuccin" end
+	end
+
+	return "auto"
+end
 
 -- ──────────────────────────────────────────────────────────────────────────────
 -- Setup.
@@ -174,97 +158,48 @@ vim.api.nvim_create_autocmd({ "BufWritePost", "DirChanged" }, {
 
 function M.setup()
 	local utils = require("config.utils")
-	local group = utils.get_plugin_group()
-
-	local accent = {
-		branch    = hl("Keyword",  "#a9a1e1"),
-		lang      = hl("Function", "#51afef"),
-		lsp       = hl("String",   "#98be65"),
-		macro     = hl("Error",    "#ec5f67"),
-		mixed     = hl("WarningMsg", "#ff8800"),
-		session   = hl("Special",  "#eCBe7B"),
-		bar       = hl("Statement", "#51afef"),
-	}
-
-	local dap_component = nil
-	if utils.enabled(group, "dap") then
-		dap_component = {
-			function()
-				local ok, dap = pcall(require, "dap")
-				if not ok then return "" end
-				return " " .. (dap.status() ~= "" and dap.status() or "active")
-			end,
-			cond = function()
-				local ok, dap = pcall(require, "dap")
-				return ok and dap.session() ~= nil
-			end,
-			color = { fg = "#ff8800", gui = "bold" },
-		}
-	end
-
-	local session_component = {
-		function()
-			if vim.g.persisting then return " session" end
-			if vim.g.persisting == false then return " no session" end
-			return ""
-		end,
-		cond = function() return vim.g.persisting ~= nil end,
-		color = function()
-			if vim.g.persisting then return { fg = accent.lsp } end
-			return { fg = accent.session }
-		end,
-	}
-
-	local lualine_c = {
-		{
-			"filename",
-			path = 1,
-			symbols = { modified = " ●", readonly = " ", unnamed = "[No Name]" },
-		},
-		{
-			"diagnostics",
-			sources = { "nvim_diagnostic" },
-			symbols = { error = " ", warn = " ", info = " ", hint = " " },
-		},
-		{ macro_recording, color = { fg = accent.macro, gui = "bold" } },
-	}
-	if dap_component then table.insert(lualine_c, dap_component) end
 
 	require("lualine").setup({
 		options = {
-			theme = "auto",
+			theme = pick_theme(),
 			component_separators = { left = "│", right = "│" },
-			section_separators = { left = "", right = "" },
+			section_separators = { left = "", right = "" },
 			globalstatus = true,
 			icons_enabled = true,
-			refresh = { statusline = 200 },
 		},
 		sections = {
 			lualine_a = { { "mode", fmt = function(s) return " " .. s end } },
 			lualine_b = {
-				{ "branch", icon = "", color = { fg = accent.branch, gui = "bold" } },
+				{ "branch", icon = "" },
 				{ "diff", symbols = { added = " ", modified = " ", removed = " " } },
 			},
-			lualine_c = lualine_c,
+			lualine_c = {
+				{
+					"filename",
+					path = 1,
+					symbols = { modified = " ●", readonly = " ", unnamed = "[No Name]" },
+				},
+				{
+					"diagnostics",
+					sources = { "nvim_diagnostic" },
+					symbols = { error = " ", warn = " ", info = " ", hint = " " },
+				},
+			},
 			lualine_x = {
-				{ language_component, color = { fg = accent.lang, gui = "bold" } },
-				{ mixed_indent, color = { fg = accent.mixed, gui = "bold" } },
-				session_component,
-				{ lsp_spinner, color = { fg = accent.lsp } },
+				{
+					language_component,
+					cond = function() return vim.fn.winwidth(0) > 100 end,
+				},
 				{
 					function() return utils.get_attached_clients() end,
 					icon = "",
-					color = { fg = accent.lsp, gui = "bold" },
-					cond = function() return vim.fn.winwidth(0) > 100 end,
+					cond = function() return vim.fn.winwidth(0) > 80 end,
 				},
 				{ "filetype", icon_only = true, padding = { left = 1, right = 0 } },
 				{ "encoding", fmt = string.upper, cond = function() return vim.fn.winwidth(0) > 90 end },
 			},
 			lualine_y = { "progress" },
-			lualine_z = {
-				"location",
-				{ scroll_bar, color = { fg = accent.bar, gui = "bold" }, padding = { left = 0, right = 1 } },
-			},
+			lualine_z = { "location" },
 		},
 		inactive_sections = {
 			lualine_a = { { "filename", path = 1 } },
@@ -275,6 +210,19 @@ function M.setup()
 			lualine_z = { "location" },
 		},
 		extensions = { "neo-tree", "lazy", "mason", "quickfix", "toggleterm", "trouble", "aerial", "nvim-dap-ui" },
+	})
+
+	-- Re-resolve lualine theme whenever the colorscheme changes so the
+	-- statusline tracks :LushColors / :colorscheme switches automatically.
+	vim.api.nvim_create_autocmd("ColorScheme", {
+		group = vim.api.nvim_create_augroup("LushStatuslineTheme", { clear = true }),
+		callback = function()
+			local ok, lualine = pcall(require, "lualine")
+			if not ok then return end
+			local cfg = lualine.get_config()
+			cfg.options.theme = pick_theme()
+			lualine.setup(cfg)
+		end,
 	})
 end
 
