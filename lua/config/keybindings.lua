@@ -325,6 +325,9 @@ map("n", "<leader>uc", "<CMD>LushColors<CR>", { desc = "Colorscheme picker" })
 -- Statusline style picker
 map("n", "<leader>ul", "<CMD>LushStatusline<CR>", { desc = "Statusline picker" })
 
+-- Feature toggle picker — enable/disable any enable_plugins flag with persistence
+map("n", "<leader>uF", "<CMD>LushFeatures<CR>", { desc = "Feature toggle picker" })
+
 -- Layout escape hatch (moved to uR to free uL for snacks Relative Number toggle)
 map("n", "<leader>uR", "<CMD>LushLayoutReset<CR>", { desc = "Reset layout state" })
 
