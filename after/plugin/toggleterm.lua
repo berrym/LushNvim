@@ -1,4 +1,5 @@
 local utils = require("config.utils")
+local map = utils.map
 local group = utils.get_plugin_group()
 
 if utils.enabled(group, "toggleterm") then
@@ -6,12 +7,7 @@ if utils.enabled(group, "toggleterm") then
     open_mapping = [[<c-t>]],
     on_open = function(term)
       vim.cmd.startinsert()
-      vim.keymap.set(
-        "n",
-        "q",
-        "<cmd>close<CR>",
-        { buffer = term.bufnr, noremap = true, silent = true }
-      )
+      map("n", "q", "<cmd>close<CR>", { buffer = term.bufnr, noremap = true, silent = true })
     end,
     size = 25,
     direction = "horizontal",

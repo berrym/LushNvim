@@ -26,7 +26,9 @@ local M = {}
 -- ══════════════════════════════════════════════════════════════════════════════
 -- [2] Helper Functions
 -- ══════════════════════════════════════════════════════════════════════════════
-local map = vim.keymap.set
+-- Tracked wrapper — every mapping goes into the LushNvim keymap registry
+-- so :LushReload can clear them when features are disabled in user.config.
+local map = require("config.utils").map
 
 -- ══════════════════════════════════════════════════════════════════════════════
 -- [3] Direct Window Navigation (Ctrl+h/j/k/l)
@@ -431,11 +433,11 @@ if enabled(group, "flash") then
     require("flash").toggle()
   end
 
-  vim.keymap.set({ "n", "x", "o" }, "s", flash_jump, { desc = "Flash jump" })
-  vim.keymap.set({ "n", "x", "o" }, "S", flash_ts, { desc = "Flash treesitter" })
-  vim.keymap.set("o", "r", flash_remote, { desc = "Remote flash" })
-  vim.keymap.set({ "o", "x" }, "R", flash_ts_search, { desc = "Treesitter search" })
-  vim.keymap.set("c", "<C-s>", flash_toggle, { desc = "Toggle flash search" })
+  map({ "n", "x", "o" }, "s", flash_jump, { desc = "Flash jump" })
+  map({ "n", "x", "o" }, "S", flash_ts, { desc = "Flash treesitter" })
+  map("o", "r", flash_remote, { desc = "Remote flash" })
+  map({ "o", "x" }, "R", flash_ts_search, { desc = "Treesitter search" })
+  map("c", "<C-s>", flash_toggle, { desc = "Toggle flash search" })
 
   -- Legacy keymap kept for muscle memory; <leader>j now jumps via flash.
   map("n", "<leader>j", flash_jump, { desc = "Flash jump (word)" })

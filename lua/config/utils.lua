@@ -159,6 +159,44 @@ M.enabled = function(group, opt)
   return group == nil or group[opt] == nil or group[opt] == true
 end
 
+-- ──────────────────────────────────────────────────────────────────────────────
+-- Keymap registry — so :LushReload can clear keymaps set by features that are
+-- now disabled in user.config. The registry lives on _G so it survives
+-- package.loaded clearing during reload.
+-- ──────────────────────────────────────────────────────────────────────────────
+_G.lush_tracked_keymaps = _G.lush_tracked_keymaps or {}
+
+-- Drop-in replacement for vim.keymap.set that records every (mode, lhs) pair
+-- in the registry. Buffer-local mappings are skipped (they die with the buf).
+M.map = function(mode, lhs, rhs, opts)
+  opts = opts or {}
+  if not opts.buffer then
+    local modes = type(mode) == "table" and mode or { mode }
+    for _, m in ipairs(modes) do
+      table.insert(_G.lush_tracked_keymaps, { mode = m, lhs = lhs })
+    end
+  end
+  vim.keymap.set(mode, lhs, rhs, opts)
+end
+
+-- For plugins (snacks.toggle, etc.) that bind keymaps via their own API.
+-- Call this immediately after to make the binding reload-aware.
+M.track_keymap = function(mode, lhs)
+  local modes = type(mode) == "table" and mode or { mode }
+  for _, m in ipairs(modes) do
+    table.insert(_G.lush_tracked_keymaps, { mode = m, lhs = lhs })
+  end
+end
+
+-- Remove every tracked keymap from vim and reset the registry. Called by
+-- :LushReload before re-sourcing so disabled features don't leave stale binds.
+M.clear_tracked_keymaps = function()
+  for _, km in ipairs(_G.lush_tracked_keymaps) do
+    pcall(vim.keymap.del, km.mode, km.lhs)
+  end
+  _G.lush_tracked_keymaps = {}
+end
+
 -- get user config value (reduces boilerplate in plugin files)
 M.get_user_config = function(key)
   local exist, user_config = pcall(require, "user.config")

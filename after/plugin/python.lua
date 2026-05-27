@@ -1,6 +1,7 @@
 -- Python LSP configuration
 -- Uses basedpyright for type checking/hover and ruff for linting/formatting
 local utils = require("config.utils")
+local map = utils.map
 local group = utils.get_plugin_group()
 
 if utils.enabled(group, "lsp") then
@@ -27,7 +28,7 @@ if utils.enabled(group, "lsp") then
       local opts = { buffer = args.buf, silent = true }
 
       -- Organize imports (using ruff)
-      vim.keymap.set("n", "<leader>pi", function()
+      map("n", "<leader>pi", function()
         vim.lsp.buf.code_action({
           apply = true,
           context = {
@@ -38,7 +39,7 @@ if utils.enabled(group, "lsp") then
       end, vim.tbl_extend("force", opts, { desc = "Organize imports" }))
 
       -- Fix all auto-fixable issues (using ruff)
-      vim.keymap.set("n", "<leader>pf", function()
+      map("n", "<leader>pf", function()
         vim.lsp.buf.code_action({
           apply = true,
           context = {
@@ -49,7 +50,7 @@ if utils.enabled(group, "lsp") then
       end, vim.tbl_extend("force", opts, { desc = "Fix all (ruff)" }))
 
       -- Format buffer (using ruff)
-      vim.keymap.set("n", "<leader>pF", function()
+      map("n", "<leader>pF", function()
         vim.lsp.buf.format({ async = true })
       end, vim.tbl_extend("force", opts, { desc = "Format buffer" }))
     end,
@@ -71,19 +72,19 @@ if utils.enabled(group, "dap") and utils.enabled(group, "dap_python") then
       callback = function(args)
         local opts = { buffer = args.buf, silent = true }
 
-        vim.keymap.set("n", "<leader>pd", function()
+        map("n", "<leader>pd", function()
           require("dap").continue()
         end, vim.tbl_extend("force", opts, { desc = "Debug file" }))
 
-        vim.keymap.set("n", "<leader>pt", function()
+        map("n", "<leader>pt", function()
           dap_python.test_method()
         end, vim.tbl_extend("force", opts, { desc = "Debug test method" }))
 
-        vim.keymap.set("n", "<leader>pT", function()
+        map("n", "<leader>pT", function()
           dap_python.test_class()
         end, vim.tbl_extend("force", opts, { desc = "Debug test class" }))
 
-        vim.keymap.set("v", "<leader>pd", function()
+        map("v", "<leader>pd", function()
           dap_python.debug_selection()
         end, vim.tbl_extend("force", opts, { desc = "Debug selection" }))
       end,

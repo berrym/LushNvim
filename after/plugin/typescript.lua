@@ -5,6 +5,7 @@
 -- Keybindings under <leader>j.
 
 local utils = require("config.utils")
+local map = utils.map
 local group = utils.get_plugin_group()
 
 local JS_FTS = {
@@ -62,7 +63,7 @@ if utils.enabled(group, "lsp") then
     callback = function(args)
       local opts = { buffer = args.buf, silent = true }
       local bind = function(lhs, rhs, desc)
-        vim.keymap.set("n", lhs, rhs, vim.tbl_extend("force", opts, { desc = desc }))
+        map("n", lhs, rhs, vim.tbl_extend("force", opts, { desc = desc }))
       end
 
       -- Imports & fixes (LSP code actions + vtsls commands)
@@ -128,37 +129,27 @@ if utils.enabled(group, "package_info") then
       if not ok then
         return
       end
-      vim.keymap.set(
+      map(
         "n",
         "<leader>jp",
         pi.show,
         vim.tbl_extend("force", opts, { desc = "Show package versions" })
       )
-      vim.keymap.set(
+      map(
         "n",
         "<leader>jP",
         pi.toggle,
         vim.tbl_extend("force", opts, { desc = "Toggle package versions" })
       )
-      vim.keymap.set(
-        "n",
-        "<leader>jU",
-        pi.update,
-        vim.tbl_extend("force", opts, { desc = "Update package" })
-      )
-      vim.keymap.set(
+      map("n", "<leader>jU", pi.update, vim.tbl_extend("force", opts, { desc = "Update package" }))
+      map(
         "n",
         "<leader>jI",
         pi.install,
         vim.tbl_extend("force", opts, { desc = "Install package" })
       )
-      vim.keymap.set(
-        "n",
-        "<leader>jd",
-        pi.delete,
-        vim.tbl_extend("force", opts, { desc = "Delete package" })
-      )
-      vim.keymap.set(
+      map("n", "<leader>jd", pi.delete, vim.tbl_extend("force", opts, { desc = "Delete package" }))
+      map(
         "n",
         "<leader>jc",
         pi.change_version,
@@ -266,7 +257,7 @@ if utils.enabled(group, "dap") and utils.enabled(group, "dap_js") then
       callback = function(args)
         local opts = { buffer = args.buf, silent = true }
         local bind = function(lhs, rhs, desc)
-          vim.keymap.set("n", lhs, rhs, vim.tbl_extend("force", opts, { desc = desc }))
+          map("n", lhs, rhs, vim.tbl_extend("force", opts, { desc = desc }))
         end
         bind("<leader>jD", function()
           dap.continue()

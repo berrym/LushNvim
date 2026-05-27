@@ -31,6 +31,12 @@ create_user_command("LushReload", function(opts)
     saved_statusline = styles_mod.current()
   end
 
+  -- 0b. Clear every keymap LushNvim registered. After re-source, only the
+  --     keymaps gated by currently-enabled features will be re-bound, so
+  --     toggling `enable_plugins.foo = false` and reloading actually removes
+  --     foo's mappings (instead of leaving stale binds in which-key).
+  pcall(utils.clear_tracked_keymaps)
+
   -- 1. Clear every LushNvim module so `require` re-executes them.
   --    Covers config.*, user.* (plugin-configs, usercommands, etc.) and
   --    the lush.* subtree (statuslines, health).

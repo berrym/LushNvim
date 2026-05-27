@@ -1,4 +1,5 @@
 local utils = require("config.utils")
+local map = utils.map
 local group = utils.get_plugin_group()
 
 if utils.enabled(group, "rustaceanvim") then
@@ -36,57 +37,57 @@ if utils.enabled(group, "rustaceanvim") then
         local opts = { buffer = bufnr, silent = true }
 
         -- Hover actions (replaces default hover with rust-specific actions)
-        vim.keymap.set("n", "<C-space>", function()
+        map("n", "<C-space>", function()
           vim.cmd.RustLsp({ "hover", "actions" })
         end, vim.tbl_extend("force", opts, { desc = "Rust hover actions" }))
 
         -- Code action groups
-        vim.keymap.set("n", "<leader>ca", function()
+        map("n", "<leader>ca", function()
           vim.cmd.RustLsp("codeAction")
         end, vim.tbl_extend("force", opts, { desc = "Rust code actions" }))
 
         -- Runnables
-        vim.keymap.set("n", "<leader>rr", function()
+        map("n", "<leader>rr", function()
           vim.cmd.RustLsp("runnables")
         end, vim.tbl_extend("force", opts, { desc = "Rust runnables" }))
 
         -- Debuggables
-        vim.keymap.set("n", "<leader>rd", function()
+        map("n", "<leader>rd", function()
           vim.cmd.RustLsp("debuggables")
         end, vim.tbl_extend("force", opts, { desc = "Rust debuggables" }))
 
         -- Expand macro
-        vim.keymap.set("n", "<leader>rm", function()
+        map("n", "<leader>rm", function()
           vim.cmd.RustLsp("expandMacro")
         end, vim.tbl_extend("force", opts, { desc = "Expand macro" }))
 
         -- Cargo run
-        vim.keymap.set("n", "<leader>rc", function()
+        map("n", "<leader>rc", function()
           vim.cmd.RustLsp("run")
         end, vim.tbl_extend("force", opts, { desc = "Cargo run" }))
 
         -- Open Cargo.toml
-        vim.keymap.set("n", "<leader>ro", function()
+        map("n", "<leader>ro", function()
           vim.cmd.RustLsp("openCargo")
         end, vim.tbl_extend("force", opts, { desc = "Open Cargo.toml" }))
 
         -- Parent module
-        vim.keymap.set("n", "<leader>rp", function()
+        map("n", "<leader>rp", function()
           vim.cmd.RustLsp("parentModule")
         end, vim.tbl_extend("force", opts, { desc = "Go to parent module" }))
 
         -- Join lines (Rust-aware)
-        vim.keymap.set("n", "J", function()
+        map("n", "J", function()
           vim.cmd.RustLsp("joinLines")
         end, vim.tbl_extend("force", opts, { desc = "Join lines (Rust)" }))
 
         -- Explain error
-        vim.keymap.set("n", "<leader>re", function()
+        map("n", "<leader>re", function()
           vim.cmd.RustLsp("explainError")
         end, vim.tbl_extend("force", opts, { desc = "Explain error" }))
 
         -- Render diagnostics
-        vim.keymap.set("n", "<leader>rD", function()
+        map("n", "<leader>rD", function()
           vim.cmd.RustLsp("renderDiagnostic")
         end, vim.tbl_extend("force", opts, { desc = "Render diagnostic" }))
       end,

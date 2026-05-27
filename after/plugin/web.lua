@@ -5,6 +5,7 @@
 -- a single formatter per filetype).
 
 local utils = require("config.utils")
+local map = utils.map
 local group = utils.get_plugin_group()
 
 local WEB_FTS = {
@@ -28,7 +29,7 @@ if utils.enabled(group, "lsp") then
     callback = function(args)
       local opts = { buffer = args.buf, silent = true }
       local bind = function(lhs, rhs, desc)
-        vim.keymap.set("n", lhs, rhs, vim.tbl_extend("force", opts, { desc = desc }))
+        map("n", lhs, rhs, vim.tbl_extend("force", opts, { desc = desc }))
       end
 
       bind("<leader>Wf", function()
@@ -54,7 +55,7 @@ if utils.enabled(group, "lsp") then
       group = vim.api.nvim_create_augroup("lush_web_json_schema_info", { clear = true }),
       pattern = { "json", "jsonc" },
       callback = function(args)
-        vim.keymap.set("n", "<leader>Wj", function()
+        map("n", "<leader>Wj", function()
           local clients = vim.lsp.get_clients({ name = "jsonls", bufnr = args.buf })
           local jsonls = clients[1]
           if not jsonls then

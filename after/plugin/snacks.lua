@@ -4,19 +4,31 @@ local group = utils.get_plugin_group()
 if utils.enabled(group, "snacks") then
   local ok, snacks = pcall(require, "snacks")
   if ok then
-    -- Toggle mappings using snacks.toggle
-    snacks.toggle.option("spell", { name = "Spelling" }):map("<leader>us")
-    snacks.toggle.option("wrap", { name = "Wrap" }):map("<leader>uw")
-    snacks.toggle.option("relativenumber", { name = "Relative Number" }):map("<leader>uL")
-    snacks.toggle.diagnostics():map("<leader>ud")
-    snacks.toggle.line_number():map("<leader>ul")
-    snacks.toggle
-      .option("conceallevel", { off = 0, on = vim.o.conceallevel > 0 and vim.o.conceallevel or 2 })
-      :map("<leader>uc")
-    snacks.toggle.treesitter():map("<leader>uT")
-    snacks.toggle.inlay_hints():map("<leader>uh")
+    -- Toggle mappings using snacks.toggle. snacks binds these via its own
+    -- :map(lhs) helper, so we explicitly register each with the LushNvim
+    -- keymap registry so :LushReload can clear them when snacks is disabled.
+    local toggles = {
+      { "<leader>us", snacks.toggle.option("spell", { name = "Spelling" }) },
+      { "<leader>uw", snacks.toggle.option("wrap", { name = "Wrap" }) },
+      { "<leader>uL", snacks.toggle.option("relativenumber", { name = "Relative Number" }) },
+      { "<leader>ud", snacks.toggle.diagnostics() },
+      { "<leader>ul", snacks.toggle.line_number() },
+      {
+        "<leader>uc",
+        snacks.toggle.option(
+          "conceallevel",
+          { off = 0, on = vim.o.conceallevel > 0 and vim.o.conceallevel or 2 }
+        ),
+      },
+      { "<leader>uT", snacks.toggle.treesitter() },
+      { "<leader>uh", snacks.toggle.inlay_hints() },
+    }
     if utils.enabled(group, "snacks_indent") then
-      snacks.toggle.indent():map("<leader>ui")
+      table.insert(toggles, { "<leader>ui", snacks.toggle.indent() })
+    end
+    for _, t in ipairs(toggles) do
+      t[2]:map(t[1])
+      utils.track_keymap("n", t[1])
     end
   end
 
