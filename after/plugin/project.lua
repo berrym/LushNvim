@@ -1,6 +1,10 @@
 local utils = require("config.utils")
 local group = utils.get_plugin_group()
 
+-- project.nvim v4 stores history as JSON (project_history.json). If upgrading
+-- from a build that wrote the legacy text file (project_history), run
+-- `:Project history migrate` once and delete the stale file.
+
 if utils.enabled(group, "project") then
 	require("project").setup({
 		-- Detection patterns: covers all common project types
