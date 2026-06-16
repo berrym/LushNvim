@@ -603,9 +603,11 @@ local plugins = {
   -- snacks.nvim: modern utility plugins collection (additional features, not replacements)
   -- Module opt-in is driven by enable_plugins.snacks_<module> in user/config.lua so
   -- every snacks module follows LushNvim's per-feature enable-flag pattern.
-  -- snacks: opts construction lives in lua/lush/snacks_opts.lua so the
-  -- builder can be re-called on :LushReload to pick up enable_plugins changes.
-  -- after/plugin/snacks.lua re-invokes Snacks.setup() with fresh opts on reload.
+  -- snacks: opts construction lives in lua/lush/snacks_opts.lua. lazy.nvim
+  -- runs Snacks.setup() once with these opts at startup. snacks.setup is
+  -- one-shot (no re-config API), so toggling enable_plugins.snacks_<module>
+  -- requires a restart -- after/plugin/snacks.lua deliberately does NOT
+  -- re-invoke setup (doing so errors "snacks.nvim is already setup").
   {
     "folke/snacks.nvim",
     cond = enabled(group, "snacks"),

@@ -1,7 +1,8 @@
--- Builder for snacks.nvim opts. Pulled out of lazy.lua so it can be re-called
--- at :LushReload time with fresh enable_plugins values. Toggling a snacks_X
--- flag in user/config.lua + :LushReload now actually takes effect, instead
--- of being baked into lazy's once-at-load opts snapshot.
+-- Builder for snacks.nvim opts, kept as the single source of truth so the
+-- opts table isn't inlined into lazy.lua. lazy.nvim calls this once at startup
+-- via the plugin `opts` function. snacks.setup is one-shot (no re-config API),
+-- so toggling a snacks_X flag in user/config.lua requires a full restart --
+-- :LushReload cannot live-flip snacks modules.
 
 local M = {}
 

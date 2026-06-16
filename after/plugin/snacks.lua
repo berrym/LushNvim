@@ -4,14 +4,12 @@ local group = utils.get_plugin_group()
 if utils.enabled(group, "snacks") then
   local ok, snacks = pcall(require, "snacks")
   if ok then
-    -- Re-apply opts on reload so toggling enable_plugins.snacks_<module>
-    -- and running :LushReload actually flips the module. lazy.nvim ran
-    -- snacks.setup with the initial opts at startup; this call refreshes
-    -- with the current enable_plugins values.
-    local ok_opts, snacks_opts = pcall(require, "lush.snacks_opts")
-    if ok_opts then
-      pcall(snacks.setup, snacks_opts.build())
-    end
+    -- NOTE: do NOT call snacks.setup() here. snacks.setup is strictly
+    -- one-shot (it sets Snacks.did_setup and errors "snacks.nvim is already
+    -- setup" on any second call), and lazy.nvim already ran it at startup
+    -- via the `opts` function in config/lazy.lua. There is no public
+    -- re-config API, so toggling enable_plugins.snacks_<module> and running
+    -- :LushReload cannot live-flip a module -- that needs a full restart.
 
     -- Toggle mappings using snacks.toggle. snacks binds these via its own
     -- :map(lhs) helper, so we explicitly register each with the LushNvim
