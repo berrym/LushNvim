@@ -198,6 +198,11 @@ autocmd({ "WinNew", "WinClosed", "BufWinEnter" }, {
   group = augroup("neotree_position_guard", { clear = true }),
   callback = function()
     vim.schedule(function()
+      -- Stand down while the Claude layer is rearranging windows (it relocates
+      -- neo-tree itself and keeps vim.g.lush_neotree_position in sync).
+      if vim.g.lush_claude_busy then
+        return
+      end
       local intended = vim.g.lush_neotree_position or "left"
       -- Only enforce side when the user's intent is left or right.
       -- "current" (fullscreen) and "float" placements are left alone.
@@ -421,11 +426,11 @@ autocmd("BufWinEnter", {
 autocmd("WinClosed", {
   group = augroup("layout_guardian", { clear = true }),
   callback = function()
-    if _cleanup_running then
+    if _cleanup_running or vim.g.lush_claude_busy then
       return
     end
     vim.schedule(function()
-      if _cleanup_running then
+      if _cleanup_running or vim.g.lush_claude_busy then
         return
       end
       ensure_editor_window()

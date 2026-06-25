@@ -147,6 +147,71 @@ if utils.enabled(group, "claudecode") then
     return nil
   end
 
+  -- Which side neo-tree is on ("left"/"right"/"float"), or nil if closed.
+  -- Mirrors neotree_state() in config/keybindings.lua.
+  local function neotree_side()
+    local ok, manager = pcall(require, "neo-tree.sources.manager")
+    if not ok then
+      return nil
+    end
+    local ok2, state = pcall(manager.get_state, "filesystem")
+    if not ok2 or not state or not state.winid or not vim.api.nvim_win_is_valid(state.winid) then
+      return nil
+    end
+    local cfg = vim.api.nvim_win_get_config(state.winid)
+    if cfg.relative and cfg.relative ~= "" then
+      return "float"
+    end
+    return (vim.api.nvim_win_get_position(state.winid)[2] == 0) and "left" or "right"
+  end
+
+  -- Find the (non-floating) neo-tree window, or nil.
+  local function neotree_win()
+    for _, win in ipairs(vim.api.nvim_list_wins()) do
+      if vim.api.nvim_win_is_valid(win) then
+        local buf = vim.api.nvim_win_get_buf(win)
+        if vim.bo[buf].filetype == "neo-tree" then
+          local cfg = vim.api.nvim_win_get_config(win)
+          if not (cfg.relative and cfg.relative ~= "") then
+            return win
+          end
+        end
+      end
+    end
+    return nil
+  end
+
+  -- Keep Claude (left/right) and neo-tree on opposite sides: a full-height edge
+  -- vsplit on the same side as the tree collapses the layout, so move the tree
+  -- to the other edge first. Done synchronously with wincmd H/L (Neotree show
+  -- renders async and would race the split). vim.g.lush_neotree_position is
+  -- updated to match so the neo-tree position guard keeps it there instead of
+  -- snapping it back, preserving the clean IDE layout in either orientation.
+  local function relocate_neotree_if_collision(pos)
+    if pos ~= "left" and pos ~= "right" then
+      return
+    end
+    if neotree_side() ~= pos then
+      return
+    end
+    local nt_win = neotree_win()
+    if not nt_win then
+      return
+    end
+    -- wincmd H/L equalizes the moved window's width (ballooning the tree to half
+    -- the screen), so capture and restore neo-tree's width; winfixwidth then
+    -- keeps it through the subsequent Claude split.
+    local nt_width = vim.api.nvim_win_get_width(nt_win)
+    local opposite = (pos == "left") and "right" or "left"
+    vim.g.lush_neotree_position = opposite
+    vim.api.nvim_win_call(nt_win, function()
+      vim.cmd(opposite == "right" and "wincmd L" or "wincmd H")
+    end)
+    if vim.api.nvim_win_is_valid(nt_win) then
+      vim.api.nvim_win_set_width(nt_win, nt_width)
+    end
+  end
+
   -- Check if we're managing the terminal ourselves
   local function is_managed()
     if managed_buf and vim.api.nvim_buf_is_valid(managed_buf) then
@@ -210,6 +275,9 @@ if utils.enabled(group, "claudecode") then
         vim.cmd(split_for[pos])
       end
     else
+      -- left/right: full-height edge vsplit. Move neo-tree off this side first
+      -- so the two never collide.
+      relocate_neotree_if_collision(pos)
       vim.cmd(split_for[pos])
     end
     vim.api.nvim_win_set_buf(0, managed_buf)
@@ -247,6 +315,17 @@ if utils.enabled(group, "claudecode") then
     -- Capture the user's window up front so warm repositioning can return to it.
     local prev_win = vim.api.nvim_get_current_win()
 
+    -- Suppress the layout_guardian / neotree_position_guard autocmds while we
+    -- rearrange windows: their async Neotree close/show + ensure_editor_window
+    -- otherwise fire mid-surgery and collapse the layout. Cleared one tick after
+    -- the rearrange settles (after any guard callbacks it queued have bailed).
+    vim.g.lush_claude_busy = true
+    local function finish()
+      vim.schedule(function()
+        vim.g.lush_claude_busy = false
+      end)
+    end
+
     -- Take over a terminal buffer and (re)show it confined to the current
     -- position. restore_focus returns the cursor to prev_win afterwards.
     local function take_over_and_show(term_buf, restore_focus)
@@ -266,6 +345,7 @@ if utils.enabled(group, "claudecode") then
     if term_buf then
       -- Existing terminal: move it, keeping the user where they were.
       take_over_and_show(term_buf, true)
+      finish()
       return
     end
 
@@ -279,6 +359,7 @@ if utils.enabled(group, "claudecode") then
       if buf then
         take_over_and_show(buf, false)
       end
+      finish()
     end)
   end
 
