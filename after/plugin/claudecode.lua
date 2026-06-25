@@ -19,6 +19,9 @@ if utils.enabled(group, "claudecode") then
       show_native_term_exit_tip = false,
       split_side = "right",
       split_width_percentage = 0.40,
+      -- Focusing the terminal scrolls to the prompt and enters insert mode
+      -- (plugin default, set explicitly so the behavior is guaranteed).
+      auto_insert = true,
     },
   }
 
@@ -60,8 +63,19 @@ if utils.enabled(group, "claudecode") then
   -- Terminal buffer we've taken over management of (after a position switch)
   local managed_buf = nil
 
-  -- Find the claude terminal buffer
+  -- Find the claude terminal buffer.
+  -- Prefer the plugin's official API (resolves both Snacks and native providers
+  -- and is immune to buffer-naming changes); fall back to a name scan only if
+  -- the API is unavailable or returns nothing.
   local function find_claude_term_buf()
+    local ok, term = pcall(require, "claudecode.terminal")
+    if ok and type(term.get_active_terminal_bufnr) == "function" then
+      local buf = term.get_active_terminal_bufnr()
+      if buf and vim.api.nvim_buf_is_valid(buf) then
+        return buf
+      end
+    end
+    -- Fallback: scan for a terminal buffer named after the claude command.
     for _, buf in ipairs(vim.api.nvim_list_bufs()) do
       if vim.api.nvim_buf_is_valid(buf) and vim.bo[buf].buftype == "terminal" then
         local name = vim.api.nvim_buf_get_name(buf)
@@ -86,6 +100,53 @@ if utils.enabled(group, "claudecode") then
     return nil
   end
 
+  -- Sidebars/utility panes that a top/bottom Claude split must NOT span across,
+  -- so the terminal stops at the neo-tree boundary and the IDE layout is kept.
+  -- Mirrors sidebar_filetypes in config/autocommands.lua.
+  local sidebar_fts = {
+    ["neo-tree"] = true,
+    ["Trouble"] = true,
+    ["qf"] = true,
+    ["help"] = true,
+    ["snacks_terminal"] = true,
+    ["dapui_scopes"] = true,
+    ["dapui_breakpoints"] = true,
+    ["dapui_stacks"] = true,
+    ["dapui_watches"] = true,
+    ["dapui_console"] = true,
+    ["dap-repl"] = true,
+  }
+
+  -- A "real" editor window: not floating, not a terminal, not a sidebar pane.
+  local function is_editor_win(win)
+    if not vim.api.nvim_win_is_valid(win) then
+      return false
+    end
+    local cfg = vim.api.nvim_win_get_config(win)
+    if cfg.relative and cfg.relative ~= "" then
+      return false
+    end
+    local buf = vim.api.nvim_win_get_buf(win)
+    if vim.bo[buf].buftype == "terminal" then
+      return false
+    end
+    return not sidebar_fts[vim.bo[buf].filetype]
+  end
+
+  -- Find an editor window to anchor a confined split to (prefer current).
+  local function find_editor_win()
+    local cur = vim.api.nvim_get_current_win()
+    if is_editor_win(cur) then
+      return cur
+    end
+    for _, win in ipairs(vim.api.nvim_list_wins()) do
+      if is_editor_win(win) then
+        return win
+      end
+    end
+    return nil
+  end
+
   -- Check if we're managing the terminal ourselves
   local function is_managed()
     if managed_buf and vim.api.nvim_buf_is_valid(managed_buf) then
@@ -95,11 +156,20 @@ if utils.enabled(group, "claudecode") then
     return false
   end
 
-  -- Enter Terminal-Job mode so the viewport anchors to the Claude prompt.
-  -- This is the "insert mode" for terminal buffers.
+  -- Scroll the Claude terminal to the prompt and enter Terminal-Job mode (the
+  -- "insert mode" for terminal buffers) so the user can type immediately. Once
+  -- our layer takes over a terminal's window it is no longer Snacks-managed, so
+  -- Snacks' own start_insert/scroll handling no longer applies -- we do it here.
+  -- The WinEnter `claude_terminal_scroll` autocmd reinforces this on every focus.
   local function enter_terminal_mode()
     vim.schedule(function()
-      if vim.bo.buftype == "terminal" and vim.api.nvim_get_mode().mode ~= "t" then
+      local win = vim.api.nvim_get_current_win()
+      local buf = vim.api.nvim_get_current_buf()
+      if vim.bo[buf].buftype ~= "terminal" then
+        return
+      end
+      pcall(vim.api.nvim_win_set_cursor, win, { vim.api.nvim_buf_line_count(buf), 0 })
+      if vim.api.nvim_get_mode().mode ~= "t" then
         vim.cmd.startinsert()
       end
     end)
@@ -117,9 +187,31 @@ if utils.enabled(group, "claudecode") then
     end
   end
 
-  -- Show the managed terminal in the current position
+  -- Show the managed terminal in the current position.
+  -- left/right: full-height vertical split at the screen edge.
+  -- top/bottom: horizontal split confined to the editor area so it stops at the
+  -- neo-tree/sidebar boundary (IDE-like layout) instead of spanning full width.
   local function show_managed()
-    vim.cmd(split_for[_G.claudecode_position])
+    if not (managed_buf and vim.api.nvim_buf_is_valid(managed_buf)) then
+      return
+    end
+    local pos = _G.claudecode_position
+    if pos == "top" or pos == "bottom" then
+      local target = find_editor_win()
+      if target then
+        -- aboveleft/belowright split the *current* window only, so the new
+        -- terminal inherits the editor window's width (= editor area, right of
+        -- the sidebar) rather than the full screen width that topleft/botright
+        -- would force.
+        vim.api.nvim_set_current_win(target)
+        vim.cmd(pos == "top" and "aboveleft split" or "belowright split")
+      else
+        -- Sidebar-only layout (no editor window): fall back to full width.
+        vim.cmd(split_for[pos])
+      end
+    else
+      vim.cmd(split_for[pos])
+    end
     vim.api.nvim_win_set_buf(0, managed_buf)
     resize_for_position(0)
     enter_terminal_mode()
@@ -152,31 +244,42 @@ if utils.enabled(group, "claudecode") then
     term.defaults.split_width_percentage = tc.split_width_percentage
     term.defaults.snacks_win_opts = tc.snacks_win_opts
 
+    -- Capture the user's window up front so warm repositioning can return to it.
+    local prev_win = vim.api.nvim_get_current_win()
+
+    -- Take over a terminal buffer and (re)show it confined to the current
+    -- position. restore_focus returns the cursor to prev_win afterwards.
+    local function take_over_and_show(term_buf, restore_focus)
+      managed_buf = term_buf
+      local term_win = find_buf_win(term_buf)
+      if term_win then
+        vim.api.nvim_win_close(term_win, false)
+      end
+      show_managed()
+      if restore_focus and vim.api.nvim_win_is_valid(prev_win) then
+        vim.api.nvim_set_current_win(prev_win)
+      end
+    end
+
     -- Find the terminal buffer (check managed first, then search)
     local term_buf = is_managed() and managed_buf or find_claude_term_buf()
-    if not term_buf then
-      -- No terminal exists yet, open one via plugin
-      vim.cmd("ClaudeCode")
+    if term_buf then
+      -- Existing terminal: move it, keeping the user where they were.
+      take_over_and_show(term_buf, true)
       return
     end
 
-    -- Take over management of this terminal
-    managed_buf = term_buf
-
-    -- Close the current window if visible
-    local term_win = find_buf_win(term_buf)
-    local prev_win = vim.api.nvim_get_current_win()
-    if term_win then
-      vim.api.nvim_win_close(term_win, false)
-    end
-
-    -- Open in new position
-    show_managed()
-
-    -- Return focus to previous window
-    if vim.api.nvim_win_is_valid(prev_win) then
-      vim.api.nvim_set_current_win(prev_win)
-    end
+    -- No terminal yet: let the plugin create it, then immediately take over so
+    -- the confined top/bottom layout is applied. snacks would otherwise place a
+    -- full-width split that overruns the sidebar. Focus lands in the new Claude
+    -- terminal (natural for a first open), not back in the sidebar.
+    vim.cmd("ClaudeCode")
+    vim.schedule(function()
+      local buf = find_claude_term_buf()
+      if buf then
+        take_over_and_show(buf, false)
+      end
+    end)
   end
 
   -- Override ClaudeCode toggle to handle managed terminals
@@ -248,14 +351,12 @@ if utils.enabled(group, "claudecode") then
         end
 
         -- Confirm this tab is hosting a Claude diff (buffer name suffix or marker)
+        local claude_term_buf = find_claude_term_buf()
         local has_claude_diff = false
         local term_win = nil
         for _, win in ipairs(vim.api.nvim_tabpage_list_wins(tab)) do
           local buf = vim.api.nvim_win_get_buf(win)
-          if
-            vim.bo[buf].buftype == "terminal"
-            and vim.api.nvim_buf_get_name(buf):lower():match("claude")
-          then
+          if vim.bo[buf].buftype == "terminal" and buf == claude_term_buf then
             term_win = win
           end
           local name = vim.api.nvim_buf_get_name(buf)

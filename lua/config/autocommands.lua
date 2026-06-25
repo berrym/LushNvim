@@ -551,26 +551,49 @@ local function is_empty_unnamed_buf(buf)
 end
 
 local function is_claude_terminal(buf)
-  return vim.api.nvim_buf_is_valid(buf)
-    and vim.bo[buf].buftype == "terminal"
-    and vim.api.nvim_buf_get_name(buf):lower():match("claude") ~= nil
+  if not (vim.api.nvim_buf_is_valid(buf) and vim.bo[buf].buftype == "terminal") then
+    return false
+  end
+  -- Prefer the plugin's active-terminal API; fall back to the buffer name
+  -- (the provider stops tracking a terminal once our layer takes over its
+  -- window, so the name match remains the reliable signal in that case).
+  local ok, term = pcall(require, "claudecode.terminal")
+  if ok and type(term.get_active_terminal_bufnr) == "function" then
+    if term.get_active_terminal_bufnr() == buf then
+      return true
+    end
+  end
+  return vim.api.nvim_buf_get_name(buf):lower():match("claude") ~= nil
+end
+
+-- Anchor the currently-focused Claude terminal to the prompt at the bottom and
+-- enter Terminal-Job (insert) mode, so the user can type a reply immediately
+-- without first scrolling down or pressing i. startinsert pins the viewport to
+-- the streaming prompt; the explicit cursor move covers the case where the
+-- terminal was left scrolled up in Terminal-Normal mode. No-op unless the
+-- focused window is the Claude terminal.
+local function anchor_claude_terminal()
+  local win = vim.api.nvim_get_current_win()
+  if not vim.api.nvim_win_is_valid(win) then
+    return
+  end
+  local buf = vim.api.nvim_win_get_buf(win)
+  if not is_claude_terminal(buf) then
+    return
+  end
+  pcall(vim.api.nvim_win_set_cursor, win, { vim.api.nvim_buf_line_count(buf), 0 })
+  if vim.api.nvim_get_mode().mode ~= "t" then
+    vim.cmd.startinsert()
+  end
 end
 
 local function focus_claude_terminal()
   for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
     if vim.api.nvim_win_is_valid(win) and is_claude_terminal(vim.api.nvim_win_get_buf(win)) then
       pcall(vim.api.nvim_set_current_win, win)
-      -- Enter terminal mode directly (belt-and-suspenders with WinEnter autocmd).
-      -- Schedule so the window switch fully settles before startinsert.
-      vim.schedule(function()
-        if
-          vim.api.nvim_win_is_valid(win)
-          and vim.api.nvim_get_current_win() == win
-          and is_claude_terminal(vim.api.nvim_win_get_buf(win))
-        then
-          vim.cmd.startinsert()
-        end
-      end)
+      -- Scroll to the prompt + enter insert mode once the window switch settles
+      -- (belt-and-suspenders with the WinEnter autocmd, which also fires here).
+      vim.schedule(anchor_claude_terminal)
       return true
     end
   end
@@ -937,20 +960,11 @@ end, { desc = "Reset diff/layout state (recover from flaky layout)" })
 autocmd("WinEnter", {
   group = augroup("claude_terminal_scroll", { clear = true }),
   callback = function()
-    local buf = vim.api.nvim_get_current_buf()
-    if not is_claude_terminal(buf) then
+    if not is_claude_terminal(vim.api.nvim_get_current_buf()) then
       return
     end
-    -- Schedule so layout operations (split, set_buf, resize) fully settle first.
-    -- startinsert on a terminal buffer enters Terminal-Job mode (the "insert
-    -- mode" for terminals), which anchors the viewport to the terminal cursor.
-    vim.schedule(function()
-      if
-        is_claude_terminal(vim.api.nvim_get_current_buf())
-        and vim.api.nvim_get_mode().mode ~= "t"
-      then
-        vim.cmd.startinsert()
-      end
-    end)
+    -- Schedule so layout operations (split, set_buf, resize) fully settle first,
+    -- then scroll to the prompt and enter Terminal-Job (insert) mode.
+    vim.schedule(anchor_claude_terminal)
   end,
 })
