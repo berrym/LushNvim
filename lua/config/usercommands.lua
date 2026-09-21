@@ -480,3 +480,28 @@ create_user_command("LushHealth", function()
     end,
   })
 end, { desc = "Run :checkhealth lush in a self-cleaning new tab" })
+
+-- Open the error sink written by the "lushlog" noice backend (see
+-- autocommands.error_log). `:LushErrors!` truncates the log instead.
+create_user_command("LushErrors", function(opts)
+  local utils = require("config.utils")
+  local path = vim.fn.stdpath("state") .. "/lush-errors.log"
+  if opts.bang then
+    local fp = io.open(path, "w")
+    if fp then
+      fp:close()
+    end
+    utils.notify_info("Cleared " .. path, "LushErrors")
+    return
+  end
+  if vim.fn.filereadable(path) == 0 then
+    utils.notify_info("No errors logged yet (" .. path .. ")", "LushErrors")
+    return
+  end
+  vim.cmd.split(vim.fn.fnameescape(path))
+  vim.bo.buflisted = false
+  vim.cmd("normal! G")
+end, {
+  bang = true,
+  desc = "Open the error log written by noice (bang: clear it)",
+})

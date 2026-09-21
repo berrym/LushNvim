@@ -224,8 +224,9 @@ M.treesitter_ensure_installed = {
 -- take a look at the autocommands file in lua/config for more information
 -- Default value is true if left blank
 M.autocommands = {
-  auto_reload = true,
-  format_on_save = false, -- BufWritePre → vim.lsp.buf.format. Off by default. -- Auto-reload buffers when files change externally
+  auto_reload = true, -- Auto-reload buffers when files change externally
+  format_on_save = false, -- BufWritePre → vim.lsp.buf.format. Off by default.
+  error_log = true, -- Append error messages to <state>/lush-errors.log (:LushErrors)
   cmp = true,
   css_colorizer = true,
   remember_file_state = true,
