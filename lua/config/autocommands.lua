@@ -30,7 +30,22 @@ if utils.enabled(group, "remember_file_state") then
     desc = "remember file state",
     group = remember_group,
     pattern = "*.*",
-    command = "mkview",
+    callback = function(args)
+      -- mkview saves the current window's view of the current buffer, so it
+      -- only makes sense when the buffer this event is about is the one in
+      -- the current window. That is not the case when a hidden buffer is
+      -- deleted with nvim_buf_delete (e.g. diff_cleanup below), where the
+      -- event fires with focus still on another buffer and mkview raises
+      -- E32 against a nameless one. Also skip scratch buffers with
+      -- file-like names, such as claudecode's diff buffers.
+      if
+        vim.api.nvim_get_current_buf() == args.buf
+        and vim.bo[args.buf].buftype == ""
+        and vim.fn.filereadable(args.file) == 1
+      then
+        vim.cmd("mkview")
+      end
+    end,
   })
   autocmd("BufWinEnter", {
     desc = "remember file state",

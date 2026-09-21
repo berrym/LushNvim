@@ -108,6 +108,55 @@ if enabled(group, "lsp") then
     },
     float = { border = "rounded" },
   })
+
+  -- Neovim <= 0.12.x: the diagnostic underline handler throws "Index out of
+  -- bounds" from BufReadPost when a buffer is reloaded shorter than a
+  -- diagnostic it still holds — typically a file rewritten by a code agent
+  -- and then reopened from the file tree. Fixed on master by
+  -- neovim/neovim#40839 (Jul 2026), not backported to 0.12. Until a fixed
+  -- build is in use, drop out-of-range diagnostics before they reach the
+  -- stock handler. Mirrors the upstream fix: when the buffer isn't loaded
+  -- yet the check has to wait for BufRead, since the reload is what changes
+  -- the line count. Marked so :LushReload doesn't wrap it twice.
+  local stock = vim.diagnostic.handlers.underline
+  if stock and not stock._lush_guarded then
+    local guarded = { _lush_guarded = true }
+    local pending = {} -- namespace -> autocmd id waiting for BufRead
+
+    local function clear_pending(namespace)
+      if pending[namespace] then
+        pcall(vim.api.nvim_del_autocmd, pending[namespace])
+        pending[namespace] = nil
+      end
+    end
+
+    function guarded.show(namespace, bufnr, diagnostics, opts)
+      clear_pending(namespace)
+      if not vim.api.nvim_buf_is_loaded(bufnr) then
+        pending[namespace] = vim.api.nvim_create_autocmd("BufRead", {
+          buffer = bufnr,
+          once = true,
+          callback = function()
+            pending[namespace] = nil
+            guarded.show(namespace, bufnr, diagnostics, opts)
+          end,
+        })
+        return
+      end
+      local line_count = vim.api.nvim_buf_line_count(bufnr)
+      local in_range = vim.tbl_filter(function(d)
+        return d.lnum < line_count
+      end, diagnostics)
+      return stock.show(namespace, bufnr, in_range, opts)
+    end
+
+    function guarded.hide(namespace, bufnr)
+      clear_pending(namespace)
+      return stock.hide(namespace, bufnr)
+    end
+
+    vim.diagnostic.handlers.underline = guarded
+  end
 end
 
 exist, user_config = pcall(require, "user.config")
