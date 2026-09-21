@@ -31,7 +31,11 @@ require("catppuccin").setup({
     -- miscs = {}, -- Uncomment to turn off hard-coded styles
   },
   custom_highlights = {},
-  default_integrations = true,
+  -- catppuccin removed `default_integrations` (Jul 2026); `auto_integrations`
+  -- replaced it and now defaults to true. It detects installed plugins via
+  -- lazy and enables their integrations; the explicit list below is merged
+  -- on top with force, so it still wins for anything named there.
+  auto_integrations = true,
   integrations = {
     aerial = true,
     blink_cmp = true,

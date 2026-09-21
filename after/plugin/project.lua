@@ -1,9 +1,13 @@
 local utils = require("config.utils")
 local group = utils.get_plugin_group()
 
--- project.nvim v4 stores history as JSON (project_history.json). If upgrading
--- from a build that wrote the legacy text file (project_history), run
--- `:Project history migrate` once and delete the stale file.
+-- project.nvim (v6) stores history as JSON in project_history.json under
+-- <stdpath('data')>/project_nvim. There is no in-plugin migration command for
+-- the pre-v4 plain-text `project_history` file; if one is left over, delete it
+-- and re-add projects, or rebuild the list with `:Project import`.
+--
+-- Config is read-only from the outside now: `require("project.config").get()`
+-- returns the resolved options table (the old `.options` field is gone).
 
 if utils.enabled(group, "project") then
   require("project").setup({
