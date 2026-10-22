@@ -43,6 +43,8 @@ local function setup_dap()
         python = function() end,
         -- Go: configured by nvim-dap-go in after/plugin/go.lua
         delve = function() end,
+        -- JS/TS: vscode-js-debug configured directly in after/plugin/typescript.lua
+        js = function() end,
       },
     })
   end

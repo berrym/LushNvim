@@ -275,7 +275,9 @@ M.bundles = {
       "eslint-lsp",
       "prettierd",
     },
-    mason_dap = { "js-debug-adapter" },
+    -- mason-nvim-dap source name ("js" -> js-debug-adapter); mason package
+    -- names are silently dropped by its ensure_installed resolver.
+    mason_dap = { "js" },
     treesitter = { "javascript", "typescript", "tsx", "jsdoc" },
     formatting_servers = {
       "javascript",
@@ -356,7 +358,7 @@ M.bundles = {
   },
   bash = {
     mason_null_ls = { "bash-language-server", "shfmt" },
-    mason_dap = { "bash-debug-adapter" },
+    mason_dap = { "bash" }, -- mason-nvim-dap source name -> bash-debug-adapter
     treesitter = { "bash" },
     formatting_servers = { "sh", "bash", "zsh" },
     lsp_configs = {},
