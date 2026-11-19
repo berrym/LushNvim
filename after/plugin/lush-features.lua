@@ -24,6 +24,7 @@ local descriptions = {
   autotag = "Auto-close/rename HTML/JSX tags",
   bufferline = "Tab-style buffer line at the top",
   claudecode = "Claude Code AI assistant",
+  claudecode_terminal = "Embedded Claude terminal (off = external pane, claude --ide)",
   cmp = "Completion (blink.cmp)",
   colorizer = "Inline color preview for hex/rgb",
   context = "Sticky context header (treesitter)",
@@ -100,7 +101,7 @@ local categories = {
   LSP = { "cmp", "copilot", "lsp", "null_ls" },
   UI = { "aerial", "lualine" },
   DAP = { "dap", "dap_python", "dap_go", "dap_js", "persistent_breakpoints" },
-  AI = { "claudecode" },
+  AI = { "claudecode", "claudecode_terminal" },
   Languages = {
     "rustaceanvim",
     "package_info",

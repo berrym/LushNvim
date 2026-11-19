@@ -25,6 +25,25 @@ if utils.enabled(group, "claudecode") then
     },
   }
 
+  -- External mode (enable_plugins.claudecode_terminal = false): Claude runs in
+  -- its own terminal pane outside Neovim (`claude --ide`, or `/ide` once it is
+  -- running). The plugin keeps serving diffs, selections and context over its
+  -- WebSocket server but never opens a terminal, so none of the terminal
+  -- management below is set up.
+  if not utils.enabled(group, "claudecode_terminal") then
+    require("claudecode").setup(vim.tbl_deep_extend("force", default_config, {
+      terminal = { provider = "none" },
+    }))
+    -- Drop what an embedded-mode load earlier in this session left behind, so
+    -- flipping the flag and running :LushReload does not leave stale commands.
+    pcall(vim.api.nvim_del_augroup_by_name, "LushClaudeDiffTab")
+    for _, pos in ipairs({ "Left", "Right", "Top", "Bottom" }) do
+      pcall(vim.api.nvim_del_user_command, "ClaudeCode" .. pos)
+    end
+    _G.claudecode_set_position = nil
+    return
+  end
+
   -- Current position (can be changed at runtime)
   _G.claudecode_position = _G.claudecode_position or "right"
 
@@ -40,6 +59,9 @@ if utils.enabled(group, "claudecode") then
   local function terminal_config_for(position)
     local pos_config = position_configs[position]
     return {
+      -- Explicit (it is the plugin default) so a reload out of external mode
+      -- replaces the "none" provider that mode left in the plugin's state.
+      provider = "auto",
       split_side = (position == "left" or position == "right") and position or "right",
       split_width_percentage = pos_config.width > 0 and pos_config.width or 0.40,
       snacks_win_opts = pos_config,

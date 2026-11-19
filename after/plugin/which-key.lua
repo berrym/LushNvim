@@ -28,10 +28,14 @@ if utils.enabled(group, "whichkey") then
     { "<leader>w", group = "Window", icon = "" },
     { "<leader>x", group = "Diagnostics", icon = "󰒡" },
     { "<leader>ad", group = "+Diff", icon = "" },
-    { "<leader>aw", group = "+Window", icon = "" },
     { "<leader>r", group = "Rust", icon = "🦀" },
     { "<leader>p", group = "Python", icon = "🐍" },
     { "<leader>j", group = "JS/TS", icon = "" },
     { "<leader>W", group = "Web", icon = "󰖟" },
   })
+
+  -- The Claude window-position keys only exist with the embedded terminal.
+  if utils.enabled(group, "claudecode_terminal") then
+    wk.add({ { "<leader>aw", group = "+Window", icon = "" } })
+  end
 end

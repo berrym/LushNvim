@@ -105,7 +105,7 @@ LushNvim includes built-in commands for inspection, configuration, and reload:
 | `:LushFeatures` | Telescope picker to toggle any `enable_plugins` flag with persistence and auto-reload (`<Tab>` to multi-select, `<C-a>` to batch-apply) |
 | `:LushColors` | Live-preview colorscheme picker; selection persists to `user/config.lua` |
 | `:LushStatusline` | Live-preview statusline style picker; selection persists |
-| `:LushUpdate` | Update plugins, mason packages, and treesitter parsers |
+| `:LushUpdate` | Pull the config repo, then update plugins, mason packages, and treesitter parsers. Skips the pull (with a warning) if the config has uncommitted changes other than `lazy-lock.json`; commit and push the lock afterwards to keep machines in step |
 | `:LushReload` | Hot-reload config — clears tracked keymaps and options, re-runs after/plugin, restarts LSPs |
 | `:LushLayoutReset` | Escape hatch when a Claude diff layout gets stuck |
 | `:LushInit` | Create `user/config.lua` from the example template (first-run helper) |
@@ -215,6 +215,30 @@ LushNvim uses a mnemonic keybinding system with which-key integration. Press `<l
 - Lazy package manager: `:Lazy` to manage plugins. Extra plugins added via `M.plugins` in user config.
 - Mason: `:Mason` to manage LSP servers, formatters, and debuggers.
 - CWD management: automatically changes to project root (via project.nvim) when inside a project, falls back to file directory otherwise. Special buffers (terminals, floating windows) never affect CWD.
+
+### Claude Code: embedded or external
+
+With the `claudecode` plugin enabled, `enable_plugins.claudecode_terminal` picks where Claude Code runs:
+
+- **`true` (default) — embedded.** `<leader>aa` toggles Claude in a Neovim terminal split, and `<leader>aw` moves it left/right/top/bottom.
+- **`false` — external.** Neovim never opens a Claude terminal. Start `claude --ide` in a separate terminal pane (Ghostty split, tmux pane, ...) from the project root, or run `/ide` inside an already-running session. The terminal keys (`<leader>aa`, `af`, `ar`, `aR`, `aw`) are not bound.
+
+Both modes keep the editor integration: proposed edits open as a diff in a new tab (`<leader>ada` accept, `<leader>add` deny), and `<leader>as` / `<leader>ac` / `<leader>ab` / `<leader>at` send selections and files to Claude. Diffs only open when Claude has to ask permission for an edit; with edits auto-accepted there is nothing to approve.
+
+Toggle it with `:LushFeatures`. Restart Neovim after switching if an embedded Claude session is still open.
+
+### Reviewing what Claude changed
+
+When edits are auto-accepted there is no diff to approve, so these keys review the work afterwards. A review point is a snapshot of the working tree; it touches neither the index nor the stash list, and lasts until Neovim exits.
+
+| Key | Action |
+|-----|--------|
+| `<leader>am` | Mark a review point. Gutter signs and `]c` / `[c` now show only what changed since then |
+| `<leader>av` | Toggle a diffview of everything changed since the review point, commits included (uncommitted changes when none is set) |
+| `<leader>aq` | Put every changed hunk, plus new files, into the quickfix list; step through with `]q` / `[q` |
+| `<leader>aM` | Clear the review point; gutter signs compare against the index again |
+
+Typical loop: mark, give Claude the task, review when it stops, mark again. While a review point is set, hunk staging (`<leader>gs`) is relative to it too, so clear it before staging by hunk.
 
 
 ## Project Structure

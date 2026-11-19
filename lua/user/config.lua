@@ -291,6 +291,12 @@ M.enable_plugins = {
   whichkey = true,
   -- AI Coding Assistant
   claudecode = true,
+  -- claudecode_terminal: true runs Claude in an embedded Neovim terminal
+  -- (<leader>aa, <leader>aw position switching). false leaves the terminal to
+  -- you: run `claude --ide` in a separate terminal pane and Neovim only serves
+  -- diffs, selections and context. Restart Neovim after changing it if an
+  -- embedded Claude session is still open.
+  claudecode_terminal = false,
   -- Rust
   rustaceanvim = true,
   -- JS/TS (auto-enabled by the "typescript" language bundle)

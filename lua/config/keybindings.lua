@@ -64,10 +64,6 @@ map("n", "]d", vim.diagnostic.goto_next, { desc = "Next diagnostic" })
 -- <leader>a: AI/Claude Code 󰚩
 -- ──────────────────────────────────────────────────────────────────────────────
 if enabled(group, "claudecode") then
-  map("n", "<leader>aa", "<CMD>ClaudeCode<CR>", { desc = "Toggle Claude Code terminal" })
-  map("n", "<leader>af", "<CMD>ClaudeCodeFocus<CR>", { desc = "Focus Claude Code" })
-  map("n", "<leader>ar", "<CMD>ClaudeCode --resume<CR>", { desc = "Resume conversation" })
-  map("n", "<leader>aR", "<CMD>ClaudeCode --continue<CR>", { desc = "Continue conversation" })
   map("v", "<leader>as", "<CMD>ClaudeCodeSend<CR>", { desc = "Send selection to Claude" })
   map({ "n", "v" }, "<leader>ac", "<CMD>ClaudeCodeAdd<CR>", { desc = "Add to Claude context" })
   map("n", "<leader>ab", "<CMD>ClaudeCodeAdd %<CR>", { desc = "Add buffer to context" })
@@ -75,6 +71,34 @@ if enabled(group, "claudecode") then
   -- +Diff subgroup
   map("n", "<leader>ada", "<CMD>ClaudeCodeDiffAccept<CR>", { desc = "Accept diff" })
   map("n", "<leader>add", "<CMD>ClaudeCodeDiffDeny<CR>", { desc = "Deny diff" })
+  -- Review what changed since a marked point (lua/lush/review.lua). Meant for
+  -- auto mode, where edits land without a diff to approve.
+  map("n", "<leader>am", function()
+    require("lush.review").mark()
+  end, { desc = "Mark review point" })
+  map("n", "<leader>aM", function()
+    require("lush.review").clear()
+  end, { desc = "Clear review point" })
+  if enabled(group, "diffview") then
+    map("n", "<leader>av", function()
+      require("lush.review").review()
+    end, { desc = "Review changes since mark" })
+  end
+  if enabled(group, "gitsigns") then
+    map("n", "<leader>aq", function()
+      require("lush.review").hunks()
+    end, { desc = "Changed hunks to quickfix" })
+  end
+end
+
+-- Embedded-terminal keys. Skipped in external mode (claudecode_terminal =
+-- false), where Claude runs in its own terminal pane and these have nothing
+-- to act on.
+if enabled(group, "claudecode") and enabled(group, "claudecode_terminal") then
+  map("n", "<leader>aa", "<CMD>ClaudeCode<CR>", { desc = "Toggle Claude Code terminal" })
+  map("n", "<leader>af", "<CMD>ClaudeCodeFocus<CR>", { desc = "Focus Claude Code" })
+  map("n", "<leader>ar", "<CMD>ClaudeCode --resume<CR>", { desc = "Resume conversation" })
+  map("n", "<leader>aR", "<CMD>ClaudeCode --continue<CR>", { desc = "Continue conversation" })
   -- +Position subgroup (uses snacks_win_opts for top/bottom support)
   map("n", "<leader>awl", function()
     _G.claudecode_set_position("left")

@@ -574,6 +574,12 @@ local function is_claude_terminal(buf)
   if not (vim.api.nvim_buf_is_valid(buf) and vim.bo[buf].buftype == "terminal") then
     return false
   end
+  -- External mode: Claude runs outside Neovim, so no terminal buffer here is
+  -- ever Claude's (and the name fallback below must not claim a shell that
+  -- merely has "claude" in its path).
+  if not utils.enabled(plugin, "claudecode_terminal") then
+    return false
+  end
   -- Prefer the plugin's active-terminal API; fall back to the buffer name
   -- (the provider stops tracking a terminal once our layer takes over its
   -- window, so the name match remains the reliable signal in that case).

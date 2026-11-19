@@ -85,15 +85,90 @@ M.update_mason = function()
   end
 end
 
+-- Pull LushNvim's own repository. Returns true when the pull succeeded.
+--
+-- git always runs with -C <config dir>. A bare `git pull` acts on whatever
+-- repository Neovim's cwd is in, which with autochdir is the project being
+-- edited, not the config.
+M.pull_config = function(dir)
+  dir = dir or vim.fn.stdpath("config")
+  local title = "LushUpdate"
+
+  local function git(args)
+    local cmd = { "git", "-C", dir }
+    vim.list_extend(cmd, args)
+    local res = vim.system(cmd, { text = true }):wait()
+    return res.code == 0, res.stdout or "", res.stderr or ""
+  end
+
+  local is_repo, git_dir = git({ "rev-parse", "--absolute-git-dir" })
+  if not is_repo then
+    M.notify_warn("The config directory is not a git checkout; skipped git pull.", title)
+    return false
+  end
+  git_dir = vim.trim(git_dir)
+
+  -- Tracked files with uncommitted changes ("XY path" per line).
+  local _, status = git({ "status", "--porcelain", "--untracked-files=no" })
+  local dirty = {}
+  for line in vim.gsplit(status, "\n", { plain = true, trimempty = true }) do
+    dirty[#dirty + 1] = line:sub(4)
+  end
+
+  if #dirty == 1 and dirty[1] == "lazy-lock.json" then
+    -- An earlier update left the lock file modified, and git refuses to pull
+    -- over it. Dropping the change loses nothing: lazy rewrites the lock from
+    -- the installed plugins as soon as the sync below finishes.
+    git({ "checkout", "--", "lazy-lock.json" })
+  elseif #dirty > 0 then
+    M.notify_warn(
+      "Uncommitted changes in the config ("
+        .. table.concat(dirty, ", ")
+        .. "); skipped git pull.\nCommit or stash them, then run :LushUpdate again.",
+      title
+    )
+    return false
+  end
+
+  local ok, out, err = git({ "pull", "--rebase" })
+  if not ok then
+    -- Never leave the config half-rebased: the next start would load files
+    -- with conflict markers in them.
+    if vim.uv.fs_stat(git_dir .. "/rebase-merge") or vim.uv.fs_stat(git_dir .. "/rebase-apply") then
+      git({ "rebase", "--abort" })
+    end
+    local detail = vim.trim(err ~= "" and err or out)
+    M.notify_warn("git pull failed; the config is unchanged.\n" .. detail, title)
+    return false
+  end
+  return true
+end
+
 -- updates everything in LushNvim
 M.update_all = function()
   M.notify_info("Pulling latest changes...")
-  vim.fn.system({ "git", "pull", "--rebase" })
+  M.pull_config()
   -- lazy.sync handles plugin updates + treesitter parser recompilation via build = ":TSUpdate"
   require("lazy").sync({ wait = true })
   M.notify_info("Updating Mason packages...")
   M.update_mason()
-  M.notify_info("LushNvim updated!")
+
+  -- The lock file is tracked, so an update that moved any plugin leaves it
+  -- modified. Left uncommitted, it collides with the same file committed from
+  -- another machine.
+  local res = vim
+    .system(
+      { "git", "-C", vim.fn.stdpath("config"), "status", "--porcelain", "--", "lazy-lock.json" },
+      { text = true }
+    )
+    :wait()
+  if res.code == 0 and (res.stdout or "") ~= "" then
+    M.notify_info(
+      "LushNvim updated!\nlazy-lock.json changed: commit and push it so other machines get the same plugin versions."
+    )
+  else
+    M.notify_info("LushNvim updated!")
+  end
 end
 
 -- get attached lsp servers
